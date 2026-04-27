@@ -22,6 +22,11 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
+    },
+    "./swagger": {
+      "types": "./dist/swagger/index.d.ts",
+      "import": "./dist/swagger/index.js",
+      "require": "./dist/swagger/index.cjs"
     }
   },
   "files": [
@@ -30,7 +35,7 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "tsup src/index.ts --format esm,cjs --dts --clean --sourcemap",
+    "build": "tsup src/index.ts src/swagger/index.ts --format esm,cjs --dts --clean --sourcemap",
     "test": "vitest run",
     "lint": "tsc --noEmit",
     "format": "prettier --write .",
@@ -83,6 +88,18 @@
     "access": "public"
   },
   "dependencies": {},
+  "peerDependencies": {
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1"
+  },
+  "peerDependenciesMeta": {
+    "swagger-jsdoc": {
+      "optional": true
+    },
+    "swagger-ui-express": {
+      "optional": true
+    }
+  },
   "devDependencies": {
     "prettier": "^3.5.3",
     "rimraf": "^6.0.1",

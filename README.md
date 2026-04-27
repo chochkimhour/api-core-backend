@@ -23,6 +23,7 @@ Created and maintained by **Choch Kimhour** from **Cambodia** &#x1F1F0;&#x1F1ED;
 - HTTP status code constants
 - Async Express error handling
 - Clean API errors and validation errors
+- Optional Swagger/OpenAPI documentation
 
 ## Installation
 
@@ -520,6 +521,84 @@ app.use(notFoundMiddleware);
 app.use(errorMiddleware);
 ```
 
+## Swagger / OpenAPI
+
+Swagger support is optional. Install these packages only when you want Swagger UI docs:
+
+```bash
+npm install swagger-ui-express swagger-jsdoc
+```
+
+Import Swagger helpers from the separate subpath:
+
+```js
+import {
+  createSwaggerSpec,
+  setupSwaggerDocs,
+  swaggerSchemas,
+  swaggerQueryParameters,
+} from "api-core-backend/swagger";
+```
+
+### Create OpenAPI Spec
+
+```js
+import { createSwaggerSpec } from "api-core-backend/swagger";
+
+const swaggerSpec = createSwaggerSpec({
+  title: "My API",
+  version: "1.0.0",
+  description: "REST API documentation",
+  servers: [{ url: "http://localhost:3000", description: "Local server" }],
+  tags: [{ name: "Users", description: "User endpoints" }],
+});
+```
+
+The generated spec includes reusable schemas for:
+
+- `SuccessResponse`
+- `ErrorResponse`
+- `ValidationErrorResponse`
+- `PaginatedResponse`
+- `PaginationMeta`
+
+It also includes reusable query parameters for:
+
+- `page`
+- `limit`
+- `max`
+- `offset`
+- `sortBy`
+- `sortOrder`
+- `q`
+- `search`
+
+### Express Swagger UI
+
+```js
+import express from "express";
+import { setupSwaggerDocs } from "api-core-backend/swagger";
+
+const app = express();
+
+await setupSwaggerDocs(app, {
+  path: "/api-docs",
+  title: "My API",
+  version: "1.0.0",
+  description: "REST API documentation",
+  servers: [{ url: "http://localhost:3000" }],
+  tags: [{ name: "Users" }],
+});
+```
+
+Open:
+
+```text
+http://localhost:3000/api-docs
+```
+
+`setupSwaggerDocs()` loads `swagger-ui-express` only when you call it. Users who do not need Swagger do not need to install Swagger packages.
+
 ## Error Classes
 
 ```js
@@ -606,6 +685,17 @@ const { response } = require("api-core-backend");
 | `asyncHandler(handler)`                  | Wraps async Express route handlers and forwards errors to `next` |
 | `errorMiddleware(error, req, res, next)` | Sends standard JSON error responses                              |
 | `notFoundMiddleware(req, res, next)`     | Creates a `NotFoundError` for unmatched routes                   |
+
+### Swagger Helpers
+
+Import from `api-core-backend/swagger`.
+
+| Function / Export                | Purpose                                      |
+| -------------------------------- | -------------------------------------------- |
+| `createSwaggerSpec(options)`     | Creates a framework-independent OpenAPI spec |
+| `setupSwaggerDocs(app, options)` | Mounts Swagger UI in Express apps            |
+| `swaggerSchemas`                 | Reusable response and pagination schemas     |
+| `swaggerQueryParameters`         | Reusable query parameters                    |
 
 ### Types
 
