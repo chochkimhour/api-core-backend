@@ -3,6 +3,7 @@ import {
   errorResponse,
   paginatedResponse,
   response,
+  statusCode,
   successResponse,
   validationErrorResponse,
 } from "../src";
@@ -55,6 +56,61 @@ describe("response helpers", () => {
     expect(result).not.toHaveProperty("error");
   });
 
+  it("creates a simple response from data and message", () => {
+    const users = [{ id: 1, name: "Sokha", status: "ACTIVE" }];
+    const result = response(users, "ok");
+
+    expect(result).toMatchObject({
+      success: true,
+      message: "ok",
+      data: users,
+      total: 1,
+    });
+  });
+
+  it("creates a simple response from data, message, and total", () => {
+    const users = [{ id: 1, name: "Sokha", status: "ACTIVE" }];
+    const result = response(users, "Users fetched successfully", 100);
+
+    expect(result).toMatchObject({
+      success: true,
+      message: "Users fetched successfully",
+      data: users,
+      total: 100,
+    });
+  });
+
+  it("creates a simple response from data, status code, and message", () => {
+    const users = [{ id: 1, name: "Sokha", status: "ACTIVE" }];
+    const result = response(users, statusCode.OK, "Users fetched successfully");
+
+    expect(result).toMatchObject({
+      success: true,
+      statusCode: 200,
+      message: "Users fetched successfully",
+      data: users,
+      total: 1,
+    });
+  });
+
+  it("creates a simple response from data, status code, message, and total", () => {
+    const users = [{ id: 1, name: "Sokha", status: "ACTIVE" }];
+    const result = response(
+      users,
+      statusCode.OK,
+      "Users fetched successfully",
+      100,
+    );
+
+    expect(result).toMatchObject({
+      success: true,
+      statusCode: 200,
+      message: "Users fetched successfully",
+      data: users,
+      total: 100,
+    });
+  });
+
   it("creates a simple response from message, data, and total", () => {
     const users = [{ id: 1, name: "Sokha", status: "ACTIVE" }];
     const result = response({
@@ -85,6 +141,52 @@ describe("response helpers", () => {
       message: "Users fetched successfully",
       data: users,
       total: 1,
+    });
+  });
+
+  it("creates a simple response using total from an object", () => {
+    const users = {
+      data: [{ id: 1, name: "Sokha", status: "ACTIVE" }],
+      total: 100,
+    };
+    const result = response(users);
+
+    expect(result).toMatchObject({
+      success: true,
+      message: "Request successful",
+      data: users.data,
+      total: 100,
+    });
+  });
+
+  it("creates a simple response using object total with status code and message", () => {
+    const users = {
+      data: [{ id: 1, name: "Sokha", status: "ACTIVE" }],
+      total: 100,
+    };
+    const result = response(users, statusCode.OK, "Users fetched successfully");
+
+    expect(result).toMatchObject({
+      success: true,
+      statusCode: 200,
+      message: "Users fetched successfully",
+      data: users.data,
+      total: 100,
+    });
+  });
+
+  it("creates a simple response using totalUsers from an object", () => {
+    const users = {
+      data: [{ id: 1, name: "Sokha", status: "ACTIVE" }],
+      totalUsers: 100,
+    };
+    const result = response(users);
+
+    expect(result).toMatchObject({
+      success: true,
+      message: "Request successful",
+      data: users.data,
+      total: 100,
     });
   });
 

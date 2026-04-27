@@ -8,94 +8,89 @@
 
 Clean, lightweight backend utilities for building consistent REST APIs in Node.js.
 
-Use `api-core-backend` when you want the same response format, pagination, sorting, filtering, search, HTTP status codes, custom errors, and optional Express middleware across your backend projects. The main helpers are plain TypeScript/JavaScript functions, so they work with Express, NestJS, Fastify, Koa, Hono, AdonisJS, serverless functions, or plain Node.js.
+Use `api-core-backend` for simple JSON responses, pagination, sorting, filtering, search, HTTP status constants, custom errors, and optional Express middleware. The main helpers are plain JavaScript/TypeScript functions, so they work with Express, NestJS, Fastify, Koa, Hono, serverless functions, or plain Node.js.
 
 Created and maintained by **Choch Kimhour** from **Cambodia** 🇰🇭.
 
-## Quick Install
+## Installation
 
 ```bash
 npm install api-core-backend
 ```
 
-## Quick Use
+## Quick Start
 
-### TypeScript or ESM
+### Shortest Response
 
-```ts
+```js
 import { response } from "api-core-backend";
 
 const users = [{ id: 1, name: "Sokha", status: "ACTIVE" }];
 
-const result = response({
-  message: "Users fetched successfully",
-  data: users,
-});
-
-console.log(result);
-```
-
-### CommonJS
-
-```js
-const { response } = require("api-core-backend");
-
-const result = response({
-  message: "Users fetched successfully",
-  data: [{ id: 1, name: "Sokha" }],
-});
-
-console.log(result);
-```
-
-Shortest style with automatic total from the array:
-
-```js
 res.json(response(users));
 ```
 
-Shortest style with a real database total:
-
-```js
-res.json(response(users, totalUsers));
-```
-
-### Fix Node.js Module Warning
-
-If you use `import` in a plain `.js` file and see this warning:
-
-```text
-[MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///.../index.js is not specified
-```
-
-choose one of these fixes in your project:
-
-Use ES modules by adding `"type": "module"` to your project `package.json`:
+Output:
 
 ```json
 {
-  "type": "module",
-  "dependencies": {
-    "api-core-backend": "^1.0.0"
-  }
+  "success": true,
+  "message": "Request successful",
+  "data": [{ "id": 1, "name": "Sokha", "status": "ACTIVE" }],
+  "total": 1,
+  "timestamp": "..."
 }
 ```
 
-Then use `import`:
+### Full Response
 
 ```js
-import { successResponse } from "api-core-backend";
+import { response, statusCode } from "api-core-backend";
+
+res.json(response(users, statusCode.OK, "Users fetched successfully"));
 ```
 
-Or keep CommonJS and use `require()`:
+Output:
+
+```json
+{
+  "success": true,
+  "statusCode": 200,
+  "message": "Users fetched successfully",
+  "data": [{ "id": 1, "name": "Sokha", "status": "ACTIVE" }],
+  "total": 1,
+  "timestamp": "..."
+}
+```
+
+### Response With Total From Object
+
+If your result already contains `data` and `total`, `totalUser`, or `totalUsers`, `response()` uses it automatically.
 
 ```js
-const { successResponse } = require("api-core-backend");
+const users = {
+  data: [{ id: 1, name: "Sokha", status: "ACTIVE" }],
+  total: 100,
+};
+
+res.json(response(users));
 ```
 
-### Express Route Example
+Output:
 
-```ts
+```json
+{
+  "success": true,
+  "message": "Request successful",
+  "data": [{ "id": 1, "name": "Sokha", "status": "ACTIVE" }],
+  "total": 100,
+  "timestamp": "..."
+}
+```
+
+## Express Example
+
+```js
 import express from "express";
 import {
   asyncHandler,
@@ -103,6 +98,7 @@ import {
   getPagination,
   getSearch,
   response,
+  statusCode,
 } from "api-core-backend";
 
 const app = express();
@@ -115,306 +111,61 @@ app.get(
     const search = getSearch(req.query);
 
     // Use pagination, filters, and search in your database query.
-    const users = [{ id: 1, name: "Sokha", status: "ACTIVE" }];
-    const totalUsers = users.length;
+    const users = {
+      data: [{ id: 1, name: "Sokha", status: "ACTIVE" }],
+      total: 100,
+    };
 
-    res.json(response(users, totalUsers));
+    res.json(response(users, statusCode.OK, "Users fetched successfully"));
   }),
 );
+
+app.listen(3000);
 ```
 
-## What You Get
+## Response Helper
 
-| Need | Helper |
-| ---- | ------ |
-| Return simple JSON from data with automatic array total | `response(data)` |
-| Return simple JSON from data with real database total | `response(data, total)` |
-| Return simple JSON with custom message | `response({ message, data, total })` |
-| Return a success JSON response | `successResponse()` |
-| Return an error JSON response | `errorResponse()` |
-| Return validation errors | `validationErrorResponse()` |
-| Return data with a top-level total | `paginatedResponse()` |
-| Read `page`, `limit`, `sortBy`, `sortOrder` from query params | `getPagination()` |
-| Allow only safe filter fields | `getFilters()` |
-| Read search text from `q` or `search` | `getSearch()` |
-| Wrap async Express route handlers | `asyncHandler()` |
+`response()` is the easiest helper to remember.
 
-## Why Use This Package?
+| Syntax | Result |
+| ------ | ------ |
+| `response(data)` | Success response with automatic `total` when `data` is an array |
+| `response(data, total)` | Success response with a real database total |
+| `response(data, statusCode.OK, message)` | Success response with status code and message |
+| `response(data, statusCode.OK, message, total)` | Success response with status code, message, and real total |
+| `response({ statusCode, message, data, total })` | Object style for full control |
 
-Most backend APIs repeat the same small patterns again and again:
+When `data` is an array, `total` is automatically `data.length`.
 
-- response objects with `success`, `message`, `data`, and `timestamp`
-- pagination values from `page` and `limit`
-- safe sorting from `sortBy` and `sortOrder`
-- filtering only allowed query fields
-- search keywords from `q` or `search`
-- custom HTTP errors
-- async error handling in Express
+When input is an object like `{ data: [...], total: 100 }`, the final response unwraps it into clean `data` and top-level `total`.
 
-`api-core-backend` keeps those patterns clean, reusable, and framework-independent.
-
-## Features
-
-- Standard success, error, validation error, and paginated responses
-- Pagination helpers with default page, default limit, max limit, and offset calculation
-- Sorting helper with safe `asc` and `desc` support
-- Filtering helper that only allows developer-approved fields
-- Search helper that supports `q` and `search`
-- HTTP status constants for common REST API responses
-- Custom error classes for common API errors
-- Optional Express-compatible middleware
-- TypeScript types and declaration files included
-- Works with both `import` and `require`
-- No runtime dependencies
-
-## Runtime Requirements
-
-- Node.js `>=18`
-- TypeScript is supported, but not required
-
-## JavaScript and TypeScript Support
-
-`api-core-backend` works with both JavaScript and TypeScript projects.
-
-- JavaScript projects can use it with `require()`
-- TypeScript projects can use it with `import`
-- Type definitions are included automatically
-- No extra type package is required
+## Status Codes
 
 ```js
-const { successResponse } = require("api-core-backend");
+import { statusCode } from "api-core-backend";
+
+statusCode.OK; // 200
+statusCode.CREATED; // 201
+statusCode.NO_CONTENT; // 204
+statusCode.BAD_REQUEST; // 400
+statusCode.UNAUTHORIZED; // 401
+statusCode.FORBIDDEN; // 403
+statusCode.NOT_FOUND; // 404
+statusCode.CONFLICT; // 409
+statusCode.UNPROCESSABLE_ENTITY; // 422
+statusCode.INTERNAL_SERVER_ERROR; // 500
+statusCode.SERVER_ERROR; // 500
 ```
 
-```ts
-import { successResponse, type ApiResponse } from "api-core-backend";
-```
+`HTTP_STATUS` is also exported if you prefer uppercase naming.
 
-## Supported Frameworks and Runtimes
+## Query Helpers
 
-`api-core-backend` can be used with almost any JavaScript or TypeScript backend because the main utilities are plain functions that return plain objects.
+### Pagination
 
-Commonly supported runtimes and frameworks:
-
-- Node.js
-- Express.js
-- NestJS
-- Fastify
-- Koa
-- Hono
-- AdonisJS
-- Restify
-- Sails.js
-- LoopBack
-- FeathersJS
-- Next.js API Routes
-- Next.js Route Handlers
-- Nuxt/Nitro server routes
-- Remix loaders and actions
-- AWS Lambda
-- Google Cloud Functions
-- Azure Functions
-- Vercel Functions
-- Netlify Functions
-- Bun backend apps
-- Deno backend apps with npm package compatibility
-
-Best for:
-
-- REST APIs
-- CRUD APIs
-- Admin dashboards
-- SaaS backends
-- E-commerce APIs
-- School and student systems
-- Mobile app backends
-- Microservices
-- Serverless APIs
-
-Only the Express middleware helpers are Express-style. The response helpers, pagination helpers, sorting, filtering, search, constants, types, and error classes can be used with any backend framework.
-
-## Basic Helper Example
-
-```ts
-import { getPagination, successResponse } from "api-core-backend";
-
-const pagination = getPagination({
-  page: "2",
-  limit: "20",
-  sortBy: "createdAt",
-  sortOrder: "desc",
-});
-
-const response = successResponse({
-  message: "Users fetched successfully",
-  data: [{ id: 1, name: "Ada Lovelace" }],
-});
-
-console.log(pagination);
-console.log(response);
-```
-
-## Import Styles
-
-### TypeScript or ESM
-
-```ts
-import { successResponse, getPagination } from "api-core-backend";
-```
-
-### CommonJS
+Use `getPagination()` to normalize query values before using them in a database query.
 
 ```js
-const { successResponse, getPagination } = require("api-core-backend");
-```
-
-## Standard Responses
-
-### Simple Response
-
-Use `response()` when you want the easiest syntax to remember.
-
-```ts
-import { response } from "api-core-backend";
-
-const users = [{ id: 1, name: "Sokha", status: "ACTIVE" }];
-
-res.json(
-  response({
-    message: "Users fetched successfully",
-    data: users,
-    total: 100,
-  }),
-);
-```
-
-Output:
-
-```json
-{
-  "success": true,
-  "message": "Users fetched successfully",
-  "data": [{ "id": 1, "name": "Sokha", "status": "ACTIVE" }],
-  "total": 100,
-  "timestamp": "2026-04-27T10:00:00.000Z"
-}
-```
-
-For very small responses, pass data directly:
-
-```ts
-res.json(response(users));
-```
-
-If you also have a total count, pass it as the second argument:
-
-```ts
-res.json(response(users, 100));
-```
-
-### Success Response
-
-```ts
-import { successResponse } from "api-core-backend";
-
-const response = successResponse({
-  message: "Request successful",
-  data: { id: 1, name: "User" },
-});
-```
-
-Output:
-
-```json
-{
-  "success": true,
-  "message": "Request successful",
-  "data": {
-    "id": 1,
-    "name": "User"
-  },
-  "timestamp": "2026-04-27T10:00:00.000Z"
-}
-```
-
-### Error Response
-
-```ts
-import { errorResponse } from "api-core-backend";
-
-const response = errorResponse({
-  message: "Something went wrong",
-  code: "INTERNAL_SERVER_ERROR",
-});
-```
-
-Output:
-
-```json
-{
-  "success": false,
-  "message": "Something went wrong",
-  "error": "INTERNAL_SERVER_ERROR",
-  "timestamp": "2026-04-27T10:00:00.000Z"
-}
-```
-
-### Validation Error Response
-
-```ts
-import { validationErrorResponse } from "api-core-backend";
-
-const response = validationErrorResponse({
-  errors: [{ field: "email", message: "Email is required" }],
-});
-```
-
-Output:
-
-```json
-{
-  "success": false,
-  "message": "Validation failed",
-  "errors": [
-    {
-      "field": "email",
-      "message": "Email is required"
-    }
-  ],
-  "timestamp": "2026-04-27T10:00:00.000Z"
-}
-```
-
-### Paginated Response
-
-```ts
-import { paginatedResponse } from "api-core-backend";
-
-const response = paginatedResponse({
-  message: "Data fetched successfully",
-  data: [],
-  page: 1,
-  limit: 10,
-  total: 100,
-});
-```
-
-Output:
-
-```json
-{
-  "success": true,
-  "message": "Data fetched successfully",
-  "data": [],
-  "total": 100,
-  "timestamp": "2026-04-27T10:00:00.000Z"
-}
-```
-
-## Pagination
-
-Use `getPagination()` to safely normalize query values before passing them to a service, repository, ORM, or database query.
-
-```ts
 import { getPagination } from "api-core-backend";
 
 const pagination = getPagination({
@@ -448,7 +199,7 @@ Rules:
 
 ### Pagination Metadata
 
-```ts
+```js
 import { getPaginationMeta } from "api-core-backend";
 
 const meta = getPaginationMeta({
@@ -471,9 +222,9 @@ Output:
 }
 ```
 
-## Sorting
+### Sorting
 
-```ts
+```js
 import { getSorting } from "api-core-backend";
 
 const sorting = getSorting({
@@ -491,11 +242,11 @@ Output:
 }
 ```
 
-## Filtering
+### Filtering
 
-Use `getFilters()` to prevent users from filtering by fields you do not allow.
+Use `getFilters()` to keep only allowed filter fields.
 
-```ts
+```js
 import { getFilters } from "api-core-backend";
 
 const filters = getFilters(
@@ -513,14 +264,13 @@ Output:
 }
 ```
 
-The `password` field is ignored because it is not in the allowed field list.
+### Search
 
-## Search
-
-```ts
+```js
 import { getSearch } from "api-core-backend";
 
-const search = getSearch({ q: "student" });
+getSearch({ q: "student" });
+getSearch({ search: "student" });
 ```
 
 Output:
@@ -531,32 +281,130 @@ Output:
 }
 ```
 
-`getSearch()` supports both query styles:
+## Other Response Helpers
 
-```ts
-getSearch({ q: "student" });
-getSearch({ search: "student" });
+### successResponse
+
+```js
+import { successResponse } from "api-core-backend";
+
+successResponse({
+  message: "Request successful",
+  data: { id: 1, name: "User" },
+});
 ```
 
-## HTTP Status Constants
+Output:
 
-```ts
-import { HTTP_STATUS } from "api-core-backend";
+```json
+{
+  "success": true,
+  "message": "Request successful",
+  "data": { "id": 1, "name": "User" },
+  "timestamp": "..."
+}
+```
 
-HTTP_STATUS.OK; // 200
-HTTP_STATUS.CREATED; // 201
-HTTP_STATUS.BAD_REQUEST; // 400
-HTTP_STATUS.UNAUTHORIZED; // 401
-HTTP_STATUS.FORBIDDEN; // 403
-HTTP_STATUS.NOT_FOUND; // 404
-HTTP_STATUS.CONFLICT; // 409
-HTTP_STATUS.UNPROCESSABLE_ENTITY; // 422
-HTTP_STATUS.INTERNAL_SERVER_ERROR; // 500
+### errorResponse
+
+```js
+import { errorResponse } from "api-core-backend";
+
+errorResponse({
+  message: "Something went wrong",
+  code: "INTERNAL_SERVER_ERROR",
+});
+```
+
+Output:
+
+```json
+{
+  "success": false,
+  "message": "Something went wrong",
+  "error": "INTERNAL_SERVER_ERROR",
+  "timestamp": "..."
+}
+```
+
+### validationErrorResponse
+
+```js
+import { validationErrorResponse } from "api-core-backend";
+
+validationErrorResponse({
+  errors: [{ field: "email", message: "Email is required" }],
+});
+```
+
+Output:
+
+```json
+{
+  "success": false,
+  "message": "Validation failed",
+  "errors": [{ "field": "email", "message": "Email is required" }],
+  "timestamp": "..."
+}
+```
+
+### paginatedResponse
+
+`paginatedResponse()` is still available for users who prefer explicit `page`, `limit`, and `total` input. The response stays clean and only shows top-level `total`.
+
+```js
+import { paginatedResponse } from "api-core-backend";
+
+paginatedResponse({
+  message: "Data fetched successfully",
+  data: [],
+  page: 1,
+  limit: 10,
+  total: 100,
+});
+```
+
+Output:
+
+```json
+{
+  "success": true,
+  "message": "Data fetched successfully",
+  "data": [],
+  "total": 100,
+  "timestamp": "..."
+}
+```
+
+## Express Middleware
+
+Express support is optional. Express is not installed as a dependency of this package.
+
+```js
+import express from "express";
+import {
+  asyncHandler,
+  errorMiddleware,
+  notFoundMiddleware,
+  response,
+} from "api-core-backend";
+
+const app = express();
+
+app.get(
+  "/users",
+  asyncHandler(async (_req, res) => {
+    res.json(response([{ id: 1, name: "Sokha" }]));
+  }),
+);
+
+app.use(notFoundMiddleware);
+app.use(errorMiddleware);
 ```
 
 ## Error Classes
 
-```ts
+```js
 import {
   AppError,
   BadRequestError,
@@ -565,6 +413,7 @@ import {
   NotFoundError,
   UnauthorizedError,
   ValidationError,
+  statusCode,
 } from "api-core-backend";
 
 throw new NotFoundError("User not found");
@@ -575,202 +424,69 @@ throw new ValidationError("Validation failed", [
 
 throw new AppError({
   message: "Something went wrong",
-  statusCode: 500,
+  statusCode: statusCode.INTERNAL_SERVER_ERROR,
   code: "INTERNAL_SERVER_ERROR",
-  details: null,
 });
 ```
 
-Each error supports:
+## Import Styles
 
-- `message`
-- `statusCode`
-- `code`
-- `details`
-- `isOperational`
+### ES Modules
 
-## Express Usage
+Add `"type": "module"` to your project `package.json` when using `import` in `.js` files.
 
-Express support is optional. Express is not installed as a dependency of this package.
-
-```ts
-import express from "express";
-import {
-  asyncHandler,
-  errorMiddleware,
-  notFoundMiddleware,
-  successResponse,
-} from "api-core-backend";
-
-const app = express();
-
-app.use(express.json());
-
-app.get(
-  "/users",
-  asyncHandler(async (_req, res) => {
-    const users = [{ id: 1, name: "Ada Lovelace" }];
-
-    res.json(
-      successResponse({
-        message: "Users fetched successfully",
-        data: users,
-      }),
-    );
-  }),
-);
-
-app.use(notFoundMiddleware);
-app.use(errorMiddleware);
-
-app.listen(3000);
-```
-
-## Use With Any Framework
-
-The main utilities return plain JavaScript objects. That means you can use them with almost any backend framework.
-
-### Plain Node.js
-
-```ts
-import http from "node:http";
-import { successResponse } from "api-core-backend";
-
-const server = http.createServer((_req, res) => {
-  res.setHeader("Content-Type", "application/json");
-  res.end(JSON.stringify(successResponse({ data: { ok: true } })));
-});
-
-server.listen(3000);
-```
-
-### Fastify
-
-```ts
-import Fastify from "fastify";
-import { successResponse } from "api-core-backend";
-
-const app = Fastify();
-
-app.get("/health", async () => {
-  return successResponse({
-    message: "Service is healthy",
-    data: { status: "ok" },
-  });
-});
-```
-
-### NestJS
-
-```ts
-import { Controller, Get } from "@nestjs/common";
-import { successResponse } from "api-core-backend";
-
-@Controller("users")
-export class UsersController {
-  @Get()
-  findAll() {
-    return successResponse({
-      message: "Users fetched successfully",
-      data: [],
-    });
-  }
+```json
+{
+  "type": "module"
 }
 ```
 
-### Koa
-
-```ts
-import Koa from "koa";
-import { successResponse } from "api-core-backend";
-
-const app = new Koa();
-
-app.use((ctx) => {
-  ctx.body = successResponse({
-    message: "Koa response",
-    data: { ok: true },
-  });
-});
+```js
+import { response } from "api-core-backend";
 ```
 
-## JavaScript Example
+### CommonJS
 
 ```js
-const { getPagination, successResponse } = require("api-core-backend");
-
-const pagination = getPagination({
-  page: "2",
-  limit: "20",
-});
-
-const response = successResponse({
-  message: "Loaded from JavaScript",
-  data: pagination,
-});
-
-console.log(response);
+const { response } = require("api-core-backend");
 ```
 
-## TypeScript Example
+## Requirements
 
-```ts
-import {
-  getFilters,
-  getPagination,
-  getSearch,
-  successResponse,
-  type ApiResponse,
-  type PaginationQuery,
-} from "api-core-backend";
-
-const query: PaginationQuery = {
-  page: "1",
-  limit: "10",
-  sortBy: "createdAt",
-  sortOrder: "desc",
-};
-
-const response: ApiResponse = successResponse({
-  message: "TypeScript response",
-  data: {
-    pagination: getPagination(query),
-    filters: getFilters({ status: "ACTIVE", password: "secret" }, ["status"]),
-    search: getSearch({ q: "student" }),
-  },
-});
-```
+- Node.js `>=18`
+- TypeScript is supported, but not required
+- No runtime dependencies
 
 ## API Reference
 
 ### Response Helpers
 
-| Function                          | Purpose                                               |
-| --------------------------------- | ----------------------------------------------------- |
-| `response(input?)`                | Creates the easiest success response from data/input. |
-| `successResponse(input?)`         | Creates a standard successful API response.           |
-| `errorResponse(input?)`           | Creates a standard error API response.                |
-| `validationErrorResponse(input?)` | Creates a standard validation error response.         |
-| `paginatedResponse(input)`        | Creates a successful response with a top-level total. |
+| Function | Purpose |
+| -------- | ------- |
+| `response(input?, statusOrTotal?, messageOrTotal?, total?)` | Easiest success response helper |
+| `successResponse(input?)` | Standard success response |
+| `errorResponse(input?)` | Standard error response |
+| `validationErrorResponse(input?)` | Validation error response |
+| `paginatedResponse(input)` | Success response with top-level `total` |
 
 ### Query Helpers
 
-| Function                                     | Purpose                                                |
-| -------------------------------------------- | ------------------------------------------------------ |
-| `getPagination(query?, options?)`            | Normalizes page, limit, offset, sortBy, and sortOrder. |
-| `normalizePaginationQuery(query?, options?)` | Lower-level pagination normalizer.                     |
-| `getPaginationMeta({ page, limit, total })`  | Creates pagination metadata for API responses.         |
-| `getSorting(query?)`                         | Normalizes sorting input.                              |
-| `getFilters(query, allowedFields)`           | Returns only allowed filter fields.                    |
-| `getSearch(query?)`                          | Extracts a search keyword from `q` or `search`.        |
+| Function | Purpose |
+| -------- | ------- |
+| `getPagination(query?, options?)` | Normalizes page, limit, offset, sortBy, and sortOrder |
+| `normalizePaginationQuery(query?, options?)` | Lower-level pagination normalizer |
+| `getPaginationMeta({ page, limit, total })` | Builds full pagination metadata |
+| `getSorting(query?)` | Normalizes sorting input |
+| `getFilters(query, allowedFields)` | Returns only allowed filter fields |
+| `getSearch(query?)` | Extracts a search keyword from `q` or `search` |
 
 ### Middleware
 
-| Function                                 | Purpose                                                           |
-| ---------------------------------------- | ----------------------------------------------------------------- |
-| `asyncHandler(handler)`                  | Wraps async Express route handlers and forwards errors to `next`. |
-| `errorMiddleware(error, req, res, next)` | Sends standard JSON error responses.                              |
-| `notFoundMiddleware(req, res, next)`     | Creates a `NotFoundError` for unmatched routes.                   |
+| Function | Purpose |
+| -------- | ------- |
+| `asyncHandler(handler)` | Wraps async Express route handlers and forwards errors to `next` |
+| `errorMiddleware(error, req, res, next)` | Sends standard JSON error responses |
+| `notFoundMiddleware(req, res, next)` | Creates a `NotFoundError` for unmatched routes |
 
 ### Types
 

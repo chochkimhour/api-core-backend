@@ -6,6 +6,7 @@ import {
   ForbiddenError,
   HTTP_STATUS,
   NotFoundError,
+  statusCode,
   UnauthorizedError,
   ValidationError,
 } from "../src";
@@ -37,5 +38,11 @@ describe("error classes", () => {
     expect(new ValidationError().statusCode).toBe(
       HTTP_STATUS.UNPROCESSABLE_ENTITY,
     );
+  });
+
+  it("exports friendly status code aliases", () => {
+    expect(statusCode.OK).toBe(200);
+    expect(statusCode.NOT_FOUND).toBe(404);
+    expect(statusCode.INTERNAL_SERVER_ERROR).toBe(500);
   });
 });

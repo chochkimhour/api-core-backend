@@ -1,3 +1,4 @@
+import type { HttpStatusCode } from "../constants/http-status";
 import type { ApiResponse } from "../types/response.types";
 
 export interface SuccessResponseInput<T> {
@@ -6,16 +7,37 @@ export interface SuccessResponseInput<T> {
 }
 
 export interface ResponseInput<T> extends SuccessResponseInput<T> {
+  statusCode?: HttpStatusCode;
   total?: number;
 }
 
 export type ResponseResult<T> = ApiResponse<T | Record<string, never>> & {
+  statusCode?: HttpStatusCode;
   total?: number;
 };
 
 function getTotal(data: unknown, total?: number): number | undefined {
   if (total !== undefined) {
     return total;
+  }
+
+  if (data !== null && typeof data === "object") {
+    const totalValue =
+      "total" in data
+        ? data.total
+        : "totalUsers" in data
+          ? data.totalUsers
+          : "totalUser" in data
+            ? data.totalUser
+            : undefined;
+
+    if (typeof totalValue === "number" && Number.isFinite(totalValue)) {
+      return totalValue;
+    }
+
+    if ("data" in data && Array.isArray(data.data)) {
+      return data.data.length;
+    }
   }
 
   return Array.isArray(data) ? data.length : undefined;
@@ -29,7 +51,10 @@ function isResponseInput<T>(value: unknown): value is ResponseInput<T> {
   return (
     Object.prototype.hasOwnProperty.call(value, "message") ||
     Object.prototype.hasOwnProperty.call(value, "data") ||
-    Object.prototype.hasOwnProperty.call(value, "total")
+    Object.prototype.hasOwnProperty.call(value, "statusCode") ||
+    Object.prototype.hasOwnProperty.call(value, "total") ||
+    Object.prototype.hasOwnProperty.call(value, "totalUsers") ||
+    Object.prototype.hasOwnProperty.call(value, "totalUser")
   );
 }
 
@@ -50,15 +75,45 @@ export function successResponse<T = unknown>(
 /** Creates a simple successful JSON API response from data or an input object. */
 export function response<T = unknown>(
   input?: T | ResponseInput<T>,
+  statusMessageOrTotal?: HttpStatusCode | string | number,
+  messageOrTotal?: string | number,
   total?: number,
 ): ResponseResult<T> {
-  const responseInput: ResponseInput<T> = isResponseInput<T>(input)
+  const statusCode =
+    typeof statusMessageOrTotal === "number" &&
+    typeof messageOrTotal === "string"
+      ? (statusMessageOrTotal as HttpStatusCode)
+      : undefined;
+  const message =
+    typeof statusMessageOrTotal === "string"
+      ? statusMessageOrTotal
+      : typeof messageOrTotal === "string"
+        ? messageOrTotal
+        : undefined;
+  const resolvedTotal =
+    typeof statusMessageOrTotal === "number" && messageOrTotal === undefined
+      ? statusMessageOrTotal
+      : typeof messageOrTotal === "number"
+        ? messageOrTotal
+        : total;
+  const baseInput: ResponseInput<T> = isResponseInput<T>(input)
     ? input
-    : { data: input as T, ...(total !== undefined ? { total } : {}) };
+    : {
+        data: input as T,
+      };
+  const responseInput: ResponseInput<T> = {
+    ...baseInput,
+    ...(statusCode !== undefined ? { statusCode } : {}),
+    ...(message !== undefined ? { message } : {}),
+    ...(resolvedTotal !== undefined ? { total: resolvedTotal } : {}),
+  };
   const hasData = Object.prototype.hasOwnProperty.call(responseInput, "data");
-  const responseTotal = getTotal(responseInput.data, responseInput.total);
+  const responseTotal = getTotal(responseInput, responseInput.total);
   const result = {
     success: true,
+    ...(responseInput.statusCode !== undefined
+      ? { statusCode: responseInput.statusCode }
+      : {}),
     message: responseInput.message ?? "Request successful",
     data: hasData ? (responseInput.data as T) : {},
     ...(responseTotal !== undefined ? { total: responseTotal } : {}),
