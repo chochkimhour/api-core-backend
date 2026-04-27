@@ -270,10 +270,11 @@ Example output:
 [my-api] 2026-04-27 16:00:00 INFO GET /api/users 200 6ms file=users.controller.ts method=findAllUsers by=anonymous
 ```
 
-With request data:
+With response data:
 
 ```text
-[my-api] 2026-04-27 16:00:00 INFO GET /api/users/2 200 7ms file=users.controller.ts method=findUserById by=anonymous request={"params":{"id":"2"}}
+[my-api] 2026-04-27 16:00:00 INFO GET /api/users 200 6ms file=users.controller.ts method=findAllUsers by=anonymous
+response={"success":true,"statusCode":200,"message":"Users fetched successfully","data":[{"id":"1","name":"Sokha","status":"ACTIVE","role":"ADMIN"}],"total":1,"timestamp":"2026-04-27 16:00:00"}
 ```
 
 The logger:
@@ -285,7 +286,9 @@ The logger:
 - reads the matched Express route after response finish
 - infers `file=users.controller.ts` from the route path
 - infers `method=findAllUsers` from the named route handler
-- logs compact request JSON from params, query, and body
+- logs JSON response body on the next line
+- can log compact request body JSON when `includeRequestData` is enabled
+- skips request body logging for `GET` and `HEAD`
 - redacts sensitive fields like password, token, authorization, secret, and apiKey
 
 Logger options:
@@ -296,8 +299,10 @@ configureLogger({
   includeUserAgent: true,
   includeRequestFrom: false,
   includeRouteContext: true,
-  includeRequestData: true,
+  includeResponseData: true,
+  includeRequestData: false,
   maxRequestDataLength: 500,
+  maxResponseDataLength: 2000,
   controllerFileSuffix: ".controller.ts",
   getUser: (req) => req.user?.username,
 });
@@ -736,8 +741,10 @@ export async function findUserById(req: Request, res: Response) {
 | `includeIp`            | Alias-style option for request source        |
 | `includeUserAgent`     | Include user-agent                           |
 | `includeRouteContext`  | Include route-based file and method context  |
-| `includeRequestData`   | Include compact request params/query/body JSON |
+| `includeRequestData`   | Include compact request body JSON             |
+| `includeResponseData`  | Include JSON response body                    |
 | `maxRequestDataLength` | Max length for request JSON before truncation |
+| `maxResponseDataLength` | Max length for response JSON before truncation |
 | `redactFields`         | Field names to redact from request JSON      |
 | `controllerFileSuffix` | Suffix for inferred controller file          |
 | `sourceFile`           | Manually set source file                     |

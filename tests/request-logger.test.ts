@@ -27,10 +27,10 @@ describe("request logger middleware", () => {
         sourceFile: "users.controller.ts",
         sourceMethod: "findAll",
         user: "kimhour",
-        requestData: '{"query":{"max":"10"}}',
+        responseData: '{"success":true}',
       }),
     ).toBe(
-      '[my-api] 2026-04-27 16:00:00 INFO GET /users?max=10 200 12ms file=users.controller.ts method=findAll by=kimhour request={"query":{"max":"10"}} from=127.0.0.1 ua="vitest"',
+      '[my-api] 2026-04-27 16:00:00 INFO GET /users?max=10 200 12ms file=users.controller.ts method=findAll by=kimhour from=127.0.0.1 ua="vitest"\nresponse={"success":true}',
     );
   });
 
@@ -84,15 +84,59 @@ describe("request logger middleware", () => {
         on: (_event, listener) => {
           finishListener = listener;
         },
+        json: (body) => body,
       },
       () => undefined,
     );
 
     finishListener?.();
 
-    expect(logs).toHaveLength(1);
     expect(logs[0]).toMatch(
       /^\[my-api\] \d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} INFO GET \/users 200 \d+ms file=users\.controller\.ts method=findAll by=kimhour$/,
+    );
+  });
+
+  it("logs response json on the next line", () => {
+    const logs: string[] = [];
+    let finishListener: (() => void) | undefined;
+    const responseBody = {
+      success: true,
+      statusCode: 200,
+      message: "Users fetched successfully",
+      data: [{ id: "1", name: "Sokha" }],
+      total: 1,
+      timestamp: "2026-04-27 22:25:26",
+    };
+    const middleware = logger({
+      projectName: "my-api",
+      sourceFile: "users.controller.ts",
+      sourceMethod: "findAllUsers",
+      log: (message) => logs.push(message),
+    });
+
+    const res = {
+      statusCode: 200,
+      on: (_event: "finish", listener: () => void) => {
+        finishListener = listener;
+      },
+      json: (body: unknown) => body,
+    };
+
+    middleware(
+      {
+        method: "GET",
+        originalUrl: "/api/users",
+      },
+      res,
+      () => undefined,
+    );
+
+    res.json(responseBody);
+    finishListener?.();
+
+    expect(logs).toHaveLength(1);
+    expect(logs[0]).toMatch(
+      /^\[my-api\] \d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} INFO GET \/api\/users 200 \d+ms file=users\.controller\.ts method=findAllUsers by=anonymous\nresponse=\{"success":true,"statusCode":200,"message":"Users fetched successfully","data":\[\{"id":"1","name":"Sokha"\}\],"total":1,"timestamp":"2026-04-27 22:25:26"\}$/,
     );
   });
 
@@ -131,11 +175,11 @@ describe("request logger middleware", () => {
 
     expect(logs).toHaveLength(1);
     expect(logs[0]).toMatch(
-      /^\[my-api\] \d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} INFO GET \/api\/users\?max=10 200 \d+ms file=users\.controller\.ts method=findAllUsers by=anonymous request=\{"query":\{"max":"10"\}\}$/,
+      /^\[my-api\] \d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} INFO GET \/api\/users\?max=10 200 \d+ms file=users\.controller\.ts method=findAllUsers by=anonymous$/,
     );
   });
 
-  it("logs request params and redacted body json", () => {
+  it("logs redacted request body json", () => {
     const logs: string[] = [];
     let finishListener: (() => void) | undefined;
 
@@ -145,6 +189,8 @@ describe("request logger middleware", () => {
 
     const middleware = logger({
       projectName: "my-api",
+      includeRequestData: true,
+      includeResponseData: false,
       log: (message) => logs.push(message),
     });
 
@@ -170,8 +216,48 @@ describe("request logger middleware", () => {
     finishListener?.();
 
     expect(logs[0]).toMatch(
-      /request=\{"params":\{"id":"2"\},"body":\{"name":"Dara","password":"\[REDACTED\]"\}\}$/,
+      /\nrequest=\{"name":"Dara","password":"\[REDACTED\]"\}$/,
     );
+  });
+
+  it("does not log request body for GET requests", () => {
+    const logs: string[] = [];
+    let finishListener: (() => void) | undefined;
+
+    function findAllUsers() {
+      return undefined;
+    }
+
+    const middleware = logger({
+      projectName: "my-api",
+      includeRequestData: true,
+      includeResponseData: false,
+      log: (message) => logs.push(message),
+    });
+
+    middleware(
+      {
+        method: "GET",
+        originalUrl: "/api/users",
+        body: { videoName: "summer_vacation.mp4", userId: "user_123" },
+        route: {
+          path: "/users",
+          stack: [{ handle: findAllUsers }],
+        },
+      },
+      {
+        statusCode: 200,
+        on: (_event, listener) => {
+          finishListener = listener;
+        },
+      },
+      () => undefined,
+    );
+
+    finishListener?.();
+
+    expect(logs[0]).not.toContain("request=");
+    expect(logs[0]).not.toContain("videoName");
   });
 
   it("keeps async handler names available for route logs", () => {

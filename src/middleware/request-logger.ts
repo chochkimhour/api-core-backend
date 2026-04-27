@@ -7,8 +7,6 @@ export interface RequestLoggerRequest {
   ip?: string;
   baseUrl?: string;
   path?: string;
-  params?: Record<string, unknown>;
-  query?: Record<string, unknown>;
   body?: unknown;
   route?: {
     path?: unknown;
@@ -25,6 +23,7 @@ export interface RequestLoggerRequest {
 export interface RequestLoggerResponse {
   statusCode?: number;
   on?: (event: "finish", listener: () => void) => unknown;
+  json?: (body: unknown) => unknown;
 }
 
 export type RequestLoggerNext = () => void;
@@ -37,7 +36,9 @@ export interface RequestLoggerOptions {
   includeUserAgent?: boolean;
   includeRouteContext?: boolean;
   includeRequestData?: boolean;
+  includeResponseData?: boolean;
   maxRequestDataLength?: number;
+  maxResponseDataLength?: number;
   redactFields?: readonly string[];
   controllerFileSuffix?: string;
   sourceFile?: string;
@@ -269,107 +270,52 @@ function sanitizeLogValue(
   }, {});
 }
 
-function getQueryFromUrl(url?: string): Record<string, string | string[]> {
-  const queryString = url?.split("?", 2)[1];
+function canLogRequestBody(method?: string): boolean {
+  const normalizedMethod = method?.toUpperCase();
 
-  if (!queryString) {
-    return {};
-  }
-
-  const params = new URLSearchParams(queryString);
-  const query: Record<string, string | string[]> = {};
-
-  for (const [key, value] of params.entries()) {
-    const existingValue = query[key];
-
-    if (existingValue === undefined) {
-      query[key] = value;
-    } else if (Array.isArray(existingValue)) {
-      existingValue.push(value);
-    } else {
-      query[key] = [existingValue, value];
-    }
-  }
-
-  return query;
-}
-
-function getPathSegments(path?: string): string[] {
-  return (
-    path
-      ?.split("?", 1)[0]
-      ?.split("/")
-      .filter(Boolean) ?? []
-  );
-}
-
-function inferRouteParams(req: RequestLoggerRequest): Record<string, string> {
-  if (hasEntries(req.params)) {
-    return req.params as Record<string, string>;
-  }
-
-  if (typeof req.route?.path !== "string") {
-    return {};
-  }
-
-  const routeSegments = getPathSegments(req.route.path);
-  const parameterIndexes = routeSegments
-    .map((segment, index) =>
-      segment.startsWith(":") ? { index, name: segment.slice(1) } : undefined,
-    )
-    .filter((item): item is { index: number; name: string } => !!item?.name);
-
-  if (!parameterIndexes.length) {
-    return {};
-  }
-
-  const requestSegments = getPathSegments(req.originalUrl ?? req.url);
-  const offset = Math.max(0, requestSegments.length - routeSegments.length);
-
-  return parameterIndexes.reduce<Record<string, string>>(
-    (params, { index, name }) => {
-      const value = requestSegments[offset + index];
-
-      if (value !== undefined) {
-        params[name] = decodeURIComponent(value);
-      }
-
-      return params;
-    },
-    {},
-  );
+  return normalizedMethod !== "GET" && normalizedMethod !== "HEAD";
 }
 
 function formatRequestData(
   req: RequestLoggerRequest,
   options: RequestLoggerOptions,
 ): string | undefined {
-  const requestData = {
-    params: inferRouteParams(req),
-    query: hasEntries(req.query) ? req.query : getQueryFromUrl(req.originalUrl ?? req.url),
-    ...(req.body !== undefined ? { body: req.body } : {}),
-  };
-  const compactRequestData = Object.entries(requestData).reduce<
-    Record<string, unknown>
-  >((data, [key, value]) => {
-    if (hasEntries(value)) {
-      data[key] = value;
-    }
-
-    return data;
-  }, {});
-
-  if (!Object.keys(compactRequestData).length) {
+  if (
+    !canLogRequestBody(req.method) ||
+    req.body === undefined ||
+    !hasEntries(req.body)
+  ) {
     return undefined;
   }
 
   const serialized = JSON.stringify(
     sanitizeLogValue(
-      compactRequestData,
+      req.body,
       options.redactFields ?? DEFAULT_REDACT_FIELDS,
     ),
   );
   const maxLength = options.maxRequestDataLength ?? 500;
+
+  return serialized.length > maxLength
+    ? `${serialized.slice(0, maxLength)}...`
+    : serialized;
+}
+
+function formatResponseData(
+  responseBody: unknown,
+  options: RequestLoggerOptions,
+): string | undefined {
+  if (responseBody === undefined) {
+    return undefined;
+  }
+
+  const serialized = JSON.stringify(
+    sanitizeLogValue(
+      responseBody,
+      options.redactFields ?? DEFAULT_REDACT_FIELDS,
+    ),
+  );
+  const maxLength = options.maxResponseDataLength ?? 2_000;
 
   return serialized.length > maxLength
     ? `${serialized.slice(0, maxLength)}...`
@@ -390,9 +336,10 @@ export function formatRequestLog(input: {
   sourceMethod?: string;
   user?: string;
   requestData?: string;
+  responseData?: string;
 }): string {
   const requestFrom = input.requestFrom ?? input.ip;
-  const parts = [
+  const baseParts = [
     `[${input.projectName ?? getDefaultProjectName()}]`,
     input.timestamp ?? getCambodiaTimestamp(),
     getLevel(input.statusCode),
@@ -404,20 +351,29 @@ export function formatRequestLog(input: {
     `method=${input.sourceMethod ?? input.method ?? "REQUEST"}`,
     `by=${input.user ?? "anonymous"}`,
   ];
-
-  if (input.requestData) {
-    parts.push(`request=${input.requestData}`);
-  }
+  const extraParts: string[] = [];
 
   if (requestFrom) {
-    parts.push(`from=${requestFrom}`);
+    extraParts.push(`from=${requestFrom}`);
   }
 
   if (input.userAgent) {
-    parts.push(`ua="${input.userAgent}"`);
+    extraParts.push(`ua="${input.userAgent}"`);
   }
 
-  return parts.join(" ");
+  const baseMessage = [...baseParts, ...extraParts].join(" ");
+
+  const lines = [baseMessage];
+
+  if (input.requestData) {
+    lines.push(`request=${input.requestData}`);
+  }
+
+  if (input.responseData) {
+    lines.push(`response=${input.responseData}`);
+  }
+
+  return lines.join("\n");
 }
 
 export function logger(options: RequestLoggerOptions = {}) {
@@ -439,10 +395,24 @@ export function logger(options: RequestLoggerOptions = {}) {
     }
 
     const startedAt = Date.now();
+    let responseBody: unknown;
     const shouldIncludeRequestFrom =
       resolvedOptions.includeRequestFrom ??
       resolvedOptions.includeIp ??
       false;
+
+    if (res.json) {
+      const originalJson = res.json;
+
+      res.json = function jsonWithLogging(
+        this: RequestLoggerResponse,
+        body: unknown,
+      ): unknown {
+        responseBody = body;
+
+        return originalJson.call(this, body);
+      };
+    }
 
     res.on?.("finish", () => {
       const durationMs = Date.now() - startedAt;
@@ -469,8 +439,12 @@ export function logger(options: RequestLoggerOptions = {}) {
         routeSourceMethod;
       const user = resolvedOptions.getUser?.(req) ?? formatUser(req.user);
       const requestData =
-        (resolvedOptions.includeRequestData ?? true)
+        (resolvedOptions.includeRequestData ?? false)
           ? formatRequestData(req, resolvedOptions)
+          : undefined;
+      const responseData =
+        (resolvedOptions.includeResponseData ?? true)
+          ? formatResponseData(responseBody, resolvedOptions)
           : undefined;
       const message = formatRequestLog({
         ...(resolvedOptions.projectName
@@ -488,6 +462,7 @@ export function logger(options: RequestLoggerOptions = {}) {
         ...(sourceMethod ? { sourceMethod } : {}),
         ...(user ? { user } : {}),
         ...(requestData ? { requestData } : {}),
+        ...(responseData ? { responseData } : {}),
       });
 
       log(message);
