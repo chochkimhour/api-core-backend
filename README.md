@@ -1,15 +1,109 @@
 # api-core-backend
 
-[![npm version](https://img.shields.io/npm/v/api-core-backend?label=npm)](https://www.npmjs.com/package/api-core-backend)
-[![license](https://img.shields.io/npm/l/api-core-backend?label=license)](LICENSE)
-[![downloads](https://img.shields.io/npm/dm/api-core-backend?label=downloads)](https://www.npmjs.com/package/api-core-backend)
+[![npm package](https://img.shields.io/badge/npm-api--core--backend-cb3837)](https://www.npmjs.com/package/api-core-backend)
+![license](https://img.shields.io/badge/license-MIT-blue)
+![node](https://img.shields.io/badge/node-%3E%3D18-brightgreen)
 ![dependencies](https://img.shields.io/badge/dependencies-none-brightgreen)
+![typescript](https://img.shields.io/badge/types-included-blue)
 
 Clean, lightweight backend utilities for building consistent REST APIs in Node.js.
 
-`api-core-backend` helps you standardize common backend patterns such as JSON responses, pagination, sorting, filtering, searching, HTTP status codes, custom errors, and optional Express middleware. The core utilities are plain TypeScript functions, so they can be used with Express, NestJS, Fastify, Koa, Hono, AdonisJS, or plain Node.js.
+Use `api-core-backend` when you want the same response format, pagination, sorting, filtering, search, HTTP status codes, custom errors, and optional Express middleware across your backend projects. The main helpers are plain TypeScript/JavaScript functions, so they work with Express, NestJS, Fastify, Koa, Hono, AdonisJS, serverless functions, or plain Node.js.
 
-Created and maintained by **Choch Kimhour** from Cambodia 🇰🇭.
+Created and maintained by **Choch Kimhour** from **Cambodia** 🇰🇭.
+
+## Quick Install
+
+```bash
+npm install api-core-backend
+```
+
+## Quick Use
+
+### TypeScript or ESM
+
+```ts
+import { getPagination, successResponse } from "api-core-backend";
+
+const pagination = getPagination({
+  page: "1",
+  limit: "10",
+});
+
+const response = successResponse({
+  message: "Users fetched successfully",
+  data: [{ id: 1, name: "Sokha" }],
+});
+
+console.log({ pagination, response });
+```
+
+### CommonJS
+
+```js
+const { getPagination, successResponse } = require("api-core-backend");
+
+const pagination = getPagination({ page: "1", limit: "10" });
+
+const response = successResponse({
+  message: "Users fetched successfully",
+  data: [{ id: 1, name: "Sokha" }],
+});
+
+console.log({ pagination, response });
+```
+
+### Express Route Example
+
+```ts
+import express from "express";
+import {
+  asyncHandler,
+  getFilters,
+  getPagination,
+  getSearch,
+  paginatedResponse,
+} from "api-core-backend";
+
+const app = express();
+
+app.get(
+  "/users",
+  asyncHandler(async (req, res) => {
+    const pagination = getPagination(req.query);
+    const filters = getFilters(req.query, ["status", "role"]);
+    const search = getSearch(req.query);
+
+    // Use pagination, filters, and search in your database query.
+    const users = [{ id: 1, name: "Sokha", status: "ACTIVE" }];
+
+    res.json(
+      paginatedResponse({
+        message: "Users fetched successfully",
+        data: users,
+        meta: {
+          page: pagination.page,
+          limit: pagination.limit,
+          total: users.length,
+        },
+      }),
+    );
+  }),
+);
+```
+
+## What You Get
+
+| Need | Helper |
+| ---- | ------ |
+| Return a success JSON response | `successResponse()` |
+| Return an error JSON response | `errorResponse()` |
+| Return validation errors | `validationErrorResponse()` |
+| Return data with pagination meta | `paginatedResponse()` |
+| Read `page`, `limit`, `sortBy`, `sortOrder` from query params | `getPagination()` |
+| Allow only safe filter fields | `getFilters()` |
+| Read search text from `q` or `search` | `getSearch()` |
+| Wrap async Express route handlers | `asyncHandler()` |
 
 ## Why Use This Package?
 
@@ -39,13 +133,7 @@ Most backend APIs repeat the same small patterns again and again:
 - Works with both `import` and `require`
 - No runtime dependencies
 
-## Installation
-
-```bash
-npm install api-core-backend
-```
-
-## Requirements
+## Runtime Requirements
 
 - Node.js `>=18`
 - TypeScript is supported, but not required
@@ -110,7 +198,7 @@ Best for:
 
 Only the Express middleware helpers are Express-style. The response helpers, pagination helpers, sorting, filtering, search, constants, types, and error classes can be used with any backend framework.
 
-## Quick Start
+## Basic Helper Example
 
 ```ts
 import { getPagination, successResponse } from "api-core-backend";
