@@ -142,7 +142,7 @@ app.get(
   "/users",
   asyncHandler(async (req, res) => {
     const pagination = getPagination(req.query);
-    const filters = getFilters(req.query, ["status", "role"]);
+    const filters = getFilters(req.query, ["status"]);
     const search = getSearch(req.query);
 
     const allUsers = [
@@ -154,14 +154,32 @@ app.get(
       { id: 6, name: "Malis", status: "ACTIVE" },
     ];
 
-    // Use pagination, filters, and search in your database query.
-    const users = paginate(allUsers, pagination);
+    // Use filters and search before pagination.
+    const filteredUsers = allUsers
+      .filter((user) =>
+        filters.status ? user.status === filters.status : true,
+      )
+      .filter((user) =>
+        search.keyword
+          ? user.name.toLowerCase().includes(search.keyword.toLowerCase())
+          : true,
+      );
+
+    const users = paginate(filteredUsers, pagination);
 
     res.json(response(users, statusCode.OK, "Users fetched successfully"));
   }),
 );
 
 app.listen(3000);
+```
+
+Try it:
+
+```text
+http://localhost:3000/users?status=ACTIVE
+http://localhost:3000/users?q=sok
+http://localhost:3000/users?status=ACTIVE&q=a&max=2&offset=0
 ```
 
 ## Response Helper
