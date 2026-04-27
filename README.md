@@ -53,6 +53,39 @@ const response = successResponse({
 console.log({ pagination, response });
 ```
 
+### Fix Node.js Module Warning
+
+If you use `import` in a plain `.js` file and see this warning:
+
+```text
+[MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///.../index.js is not specified
+```
+
+choose one of these fixes in your project:
+
+Use ES modules by adding `"type": "module"` to your project `package.json`:
+
+```json
+{
+  "type": "module",
+  "dependencies": {
+    "api-core-backend": "^1.0.0"
+  }
+}
+```
+
+Then use `import`:
+
+```js
+import { successResponse } from "api-core-backend";
+```
+
+Or keep CommonJS and use `require()`:
+
+```js
+const { successResponse } = require("api-core-backend");
+```
+
 ### Express Route Example
 
 ```ts
