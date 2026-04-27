@@ -50,6 +50,66 @@ npm install core-backend
 - Node.js `>=18`
 - TypeScript is supported, but not required
 
+## JavaScript and TypeScript Support
+
+`core-backend` works with both JavaScript and TypeScript projects.
+
+- JavaScript projects can use it with `require()`
+- TypeScript projects can use it with `import`
+- Type definitions are included automatically
+- No extra type package is required
+
+```js
+const { successResponse } = require("core-backend");
+```
+
+```ts
+import { successResponse, type ApiResponse } from "core-backend";
+```
+
+## Supported Frameworks and Runtimes
+
+`core-backend` can be used with almost any JavaScript or TypeScript backend because the main utilities are plain functions that return plain objects.
+
+Commonly supported runtimes and frameworks:
+
+- Node.js
+- Express.js
+- NestJS
+- Fastify
+- Koa
+- Hono
+- AdonisJS
+- Restify
+- Sails.js
+- LoopBack
+- FeathersJS
+- Next.js API Routes
+- Next.js Route Handlers
+- Nuxt/Nitro server routes
+- Remix loaders and actions
+- AWS Lambda
+- Google Cloud Functions
+- Azure Functions
+- Vercel Functions
+- Netlify Functions
+- Bun backend apps
+- Deno backend apps with npm package compatibility
+
+Best for:
+
+- REST APIs
+- CRUD APIs
+- Admin dashboards
+- SaaS backends
+- E-commerce APIs
+- School and student systems
+- Mobile app backends
+- Microservices
+- Serverless APIs
+
+Only the Express middleware helpers are Express-style. The response helpers, pagination helpers, sorting, filtering, search, constants, types, and error classes can be used with any backend framework.
+
 ## Quick Start
 
 ```ts
