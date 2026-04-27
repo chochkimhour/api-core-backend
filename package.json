@@ -1,6 +1,6 @@
 {
   "name": "api-core-backend",
-  "version": "1.0.12",
+  "version": "1.0.13",
   "description": "Simple REST API response, pagination, filtering, search, HTTP status, and Express middleware helpers for Node.js and TypeScript backends.",
   "author": "Choch Kimhour",
   "license": "MIT",
