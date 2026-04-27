@@ -21,7 +21,7 @@ Created and maintained by **Choch Kimhour** from **Cambodia**.
 - HTTP status code constants
 - Express async handler, not found middleware, and error middleware
 - Request logger with one-time global config
-- Local timezone request log timestamps
+- Cambodia local request log date and time (`YYYY-MM-DD HH:mm:ss`)
 - Automatic Express route context logging
 - Optional Swagger/OpenAPI helpers
 - TypeScript types included
@@ -266,12 +266,12 @@ app.use(logger());
 Example output:
 
 ```text
-[my-api] 2026-04-27T16:00:00.000+07:00 INFO GET /api/users 200 6ms file=users.controller.ts method=findAllUsers by=system
+[my-api] 2026-04-27 16:00:00 INFO GET /api/users 200 6ms file=users.controller.ts method=findAllUsers by=system
 ```
 
 The logger:
 
-- uses local timezone timestamps
+- uses Phnom Penh, Cambodia date and time as `YYYY-MM-DD HH:mm:ss`
 - uses your configured project name
 - hides request IP/source by default
 - logs `by=system` when no user is available

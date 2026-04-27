@@ -107,21 +107,22 @@ function getDefaultProjectName(): string {
   );
 }
 
-function formatLocalTimestamp(date = new Date()): string {
-  const offsetMinutes = -date.getTimezoneOffset();
-  const offsetSign = offsetMinutes >= 0 ? "+" : "-";
-  const absoluteOffsetMinutes = Math.abs(offsetMinutes);
-  const offsetHours = String(Math.floor(absoluteOffsetMinutes / 60)).padStart(
-    2,
-    "0",
-  );
-  const offsetRemainingMinutes = String(absoluteOffsetMinutes % 60).padStart(
-    2,
-    "0",
-  );
-  const localDate = new Date(date.getTime() + offsetMinutes * 60_000);
+function formatCambodiaDateTime(date = new Date()): string {
+  const datePart = new Intl.DateTimeFormat("en-CA", {
+    day: "2-digit",
+    month: "2-digit",
+    timeZone: "Asia/Phnom_Penh",
+    year: "numeric",
+  }).format(date);
+  const timePart = new Intl.DateTimeFormat("en-GB", {
+    hour: "2-digit",
+    hour12: false,
+    minute: "2-digit",
+    second: "2-digit",
+    timeZone: "Asia/Phnom_Penh",
+  }).format(date);
 
-  return `${localDate.toISOString().replace("Z", "")}${offsetSign}${offsetHours}:${offsetRemainingMinutes}`;
+  return `${datePart} ${timePart}`;
 }
 
 function formatUser(user: unknown): string | undefined {
@@ -248,7 +249,7 @@ export function formatRequestLog(input: {
   const requestFrom = input.requestFrom ?? input.ip;
   const parts = [
     `[${input.projectName ?? getDefaultProjectName()}]`,
-    input.timestamp ?? formatLocalTimestamp(),
+    input.timestamp ?? formatCambodiaDateTime(),
     getLevel(input.statusCode),
     input.method ?? "REQUEST",
     input.url ?? "/",

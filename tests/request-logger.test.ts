@@ -21,7 +21,7 @@ describe("request logger middleware", () => {
         url: "/users?max=10",
         statusCode: 200,
         durationMs: 12,
-        timestamp: "2026-04-27T16:00:00.000+07:00",
+        timestamp: "2026-04-27 16:00:00",
         requestFrom: "127.0.0.1",
         userAgent: "vitest",
         sourceFile: "users.controller.ts",
@@ -29,7 +29,7 @@ describe("request logger middleware", () => {
         user: "kimhour",
       }),
     ).toBe(
-      '[my-api] 2026-04-27T16:00:00.000+07:00 INFO GET /users?max=10 200 12ms file=users.controller.ts method=findAll by=kimhour from=127.0.0.1 ua="vitest"',
+      '[my-api] 2026-04-27 16:00:00 INFO GET /users?max=10 200 12ms file=users.controller.ts method=findAll by=kimhour from=127.0.0.1 ua="vitest"',
     );
   });
 
@@ -41,10 +41,10 @@ describe("request logger middleware", () => {
         url: "/missing",
         statusCode: 404,
         durationMs: 3,
-        timestamp: "2026-04-27T16:00:00.000+07:00",
+        timestamp: "2026-04-27 16:00:00",
       }),
     ).toBe(
-      "[my-api] 2026-04-27T16:00:00.000+07:00 WARN GET /missing 404 3ms file=unknown method=GET by=system",
+      "[my-api] 2026-04-27 16:00:00 WARN GET /missing 404 3ms file=unknown method=GET by=system",
     );
 
     expect(
@@ -54,10 +54,10 @@ describe("request logger middleware", () => {
         url: "/users",
         statusCode: 500,
         durationMs: 8,
-        timestamp: "2026-04-27T16:00:00.000+07:00",
+        timestamp: "2026-04-27 16:00:00",
       }),
     ).toBe(
-      "[my-api] 2026-04-27T16:00:00.000+07:00 ERROR POST /users 500 8ms file=unknown method=POST by=system",
+      "[my-api] 2026-04-27 16:00:00 ERROR POST /users 500 8ms file=unknown method=POST by=system",
     );
   });
 
@@ -91,7 +91,7 @@ describe("request logger middleware", () => {
 
     expect(logs).toHaveLength(1);
     expect(logs[0]).toMatch(
-      /^\[my-api\] \d{4}-\d{2}-\d{2}T.+[+-]\d{2}:\d{2} INFO GET \/users 200 \d+ms file=users\.controller\.ts method=findAll by=kimhour$/,
+      /^\[my-api\] \d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} INFO GET \/users 200 \d+ms file=users\.controller\.ts method=findAll by=kimhour$/,
     );
   });
 
@@ -130,7 +130,7 @@ describe("request logger middleware", () => {
 
     expect(logs).toHaveLength(1);
     expect(logs[0]).toMatch(
-      /^\[my-api\] \d{4}-\d{2}-\d{2}T.+[+-]\d{2}:\d{2} INFO GET \/api\/users\?max=10 200 \d+ms file=users\.controller\.ts method=findAllUsers by=system$/,
+      /^\[my-api\] \d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} INFO GET \/api\/users\?max=10 200 \d+ms file=users\.controller\.ts method=findAllUsers by=system$/,
     );
   });
 
@@ -187,11 +187,11 @@ describe("request logger middleware", () => {
         url: "/users",
         statusCode: 200,
         durationMs: 12,
-        timestamp: "2026-04-27T16:00:00.000+07:00",
+        timestamp: "2026-04-27 16:00:00",
         requestFrom: "127.0.0.1",
       }),
     ).toBe(
-      "[my-api] 2026-04-27T16:00:00.000+07:00 INFO GET /users 200 12ms file=unknown method=GET by=system from=127.0.0.1",
+      "[my-api] 2026-04-27 16:00:00 INFO GET /users 200 12ms file=unknown method=GET by=system from=127.0.0.1",
     );
   });
 
@@ -240,7 +240,7 @@ describe("request logger middleware", () => {
 
     expect(logs).toHaveLength(1);
     expect(logs[0]).toMatch(
-      /^\[my-api\] \d{4}-\d{2}-\d{2}T.+[+-]\d{2}:\d{2} INFO GET \/api\/users 200 \d+ms file=users\.controller\.ts method=findAllUsers by=kimhour$/,
+      /^\[my-api\] \d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} INFO GET \/api\/users 200 \d+ms file=users\.controller\.ts method=findAllUsers by=kimhour$/,
     );
   });
 
