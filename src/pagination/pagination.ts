@@ -1,5 +1,6 @@
 import type {
   NormalizedPagination,
+  PaginatedData,
   PaginationMeta,
   PaginationOptions,
   PaginationQuery,
@@ -74,6 +75,17 @@ export function getPagination(
   options: PaginationOptions = {},
 ): NormalizedPagination {
   return normalizePaginationQuery(query, options);
+}
+
+/** Slices an array using normalized pagination and includes the full total. */
+export function paginate<T>(
+  items: T[],
+  pagination: Pick<NormalizedPagination, "max" | "offset">,
+): PaginatedData<T> {
+  return {
+    data: items.slice(pagination.offset, pagination.offset + pagination.max),
+    total: items.length,
+  };
 }
 
 /** Builds pagination metadata for API responses. */

@@ -33,3 +33,8 @@ export interface PaginationMeta {
   hasNextPage: boolean;
   hasPreviousPage: boolean;
 }
+
+export interface PaginatedData<T> {
+  data: T[];
+  total: number;
+}

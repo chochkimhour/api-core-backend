@@ -92,7 +92,7 @@ Output:
 
 ### Pagination For Requests
 
-`response()` does not show pagination in JSON. Use `getPagination(req.query)` to read pagination from API query params.
+`response()` does not show pagination in JSON. Use `getPagination(req.query)` to read pagination from API query params. Use `paginate(items, pagination)` when you want the package to slice an array and calculate `total` for you.
 
 When the request does not include pagination params, defaults are:
 
@@ -108,12 +108,18 @@ Example request:
 ```js
 const pagination = getPagination(req.query);
 
-const users = await getUsers({
-  max: pagination.max,
-  offset: pagination.offset,
-});
+const users = paginate(allUsers, pagination);
 
 res.json(response(users, statusCode.OK, "Users fetched successfully"));
+```
+
+Expected `users` shape:
+
+```js
+{
+  data: [{ id: 1, name: "Sokha", status: "ACTIVE" }],
+  total: 20,
+}
 ```
 
 ## Express Example
@@ -125,6 +131,7 @@ import {
   getFilters,
   getPagination,
   getSearch,
+  paginate,
   response,
   statusCode,
 } from "api-core-backend";
@@ -148,13 +155,7 @@ app.get(
     ];
 
     // Use pagination, filters, and search in your database query.
-    const users = {
-      data: allUsers.slice(
-        pagination.offset,
-        pagination.offset + pagination.max,
-      ),
-      total: allUsers.length,
-    };
+    const users = paginate(allUsers, pagination);
 
     res.json(response(users, statusCode.OK, "Users fetched successfully"));
   }),
@@ -170,7 +171,7 @@ app.listen(3000);
 | Syntax                                           | Result                                                      |
 | ------------------------------------------------ | ----------------------------------------------------------- |
 | `response(data)`                                 | Success response with `statusCode.OK` and automatic `total` |
-| `response(data, total)`                          | Success response with a real database total                 |
+| `response({ data, total })`                      | Success response with a real database total                 |
 | `response(data, statusCode.OK, message)`         | Success response with custom status code and message        |
 | `response(data, statusCode.OK, message, total)`  | Success response with status code, message, and real total  |
 | `response({ statusCode, message, data, total })` | Object style for full control                               |
@@ -256,6 +257,33 @@ Rules:
 - invalid `max` and `offset` values fall back to defaults
 - `sortOrder` only allows `asc` or `desc`
 - `limit` still works as a compatibility alias for `max`
+
+### Paginate Array Data
+
+Use `paginate()` when your data is already in an array. It slices the array and calculates `total` automatically.
+
+```js
+import { getPagination, paginate } from "api-core-backend";
+
+const pagination = getPagination({ max: "5", offset: "2" });
+
+const users = paginate(allUsers, pagination);
+```
+
+Output:
+
+```json
+{
+  "data": [
+    { "id": 3, "name": "Sophea", "status": "INACTIVE" },
+    { "id": 4, "name": "Vicheka", "status": "ACTIVE" },
+    { "id": 5, "name": "Rithy", "status": "INACTIVE" },
+    { "id": 6, "name": "Malis", "status": "ACTIVE" },
+    { "id": 7, "name": "Bopha", "status": "ACTIVE" }
+  ],
+  "total": 20
+}
+```
 
 ### Pagination Metadata
 
@@ -534,6 +562,7 @@ const { response } = require("api-core-backend");
 | Function                                     | Purpose                                        |
 | -------------------------------------------- | ---------------------------------------------- |
 | `getPagination(query?, options?)`            | Normalizes max, offset, sortBy, and sortOrder  |
+| `paginate(items, pagination)`                | Slices array data and calculates total         |
 | `normalizePaginationQuery(query?, options?)` | Lower-level pagination normalizer              |
 | `getPaginationMeta({ page, max, total })`    | Builds full pagination metadata                |
 | `getSorting(query?)`                         | Normalizes sorting input                       |

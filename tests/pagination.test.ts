@@ -3,6 +3,7 @@ import {
   getPagination,
   getPaginationMeta,
   normalizePaginationQuery,
+  paginate,
 } from "../src";
 
 describe("pagination utilities", () => {
@@ -63,6 +64,15 @@ describe("pagination utilities", () => {
     expect(getPagination({ limit: "5", offset: "2" })).toEqual({
       max: 5,
       offset: 2,
+    });
+  });
+
+  it("paginates arrays and keeps the full total", () => {
+    const users = [{ id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }, { id: 5 }];
+
+    expect(paginate(users, { max: 2, offset: 1 })).toEqual({
+      data: [{ id: 2 }, { id: 3 }],
+      total: 5,
     });
   });
 
