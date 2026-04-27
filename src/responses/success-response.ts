@@ -1,4 +1,7 @@
-import type { HttpStatusCode } from "../constants/http-status";
+import {
+  statusCode as STATUS_CODE,
+  type HttpStatusCode,
+} from "../constants/http-status";
 import type { ApiResponse } from "../types/response.types";
 
 export interface SuccessResponseInput<T> {
@@ -12,7 +15,7 @@ export interface ResponseInput<T> extends SuccessResponseInput<T> {
 }
 
 export type ResponseResult<T> = ApiResponse<T | Record<string, never>> & {
-  statusCode?: HttpStatusCode;
+  statusCode: HttpStatusCode;
   total?: number;
 };
 
@@ -111,9 +114,7 @@ export function response<T = unknown>(
   const responseTotal = getTotal(responseInput, responseInput.total);
   const result = {
     success: true,
-    ...(responseInput.statusCode !== undefined
-      ? { statusCode: responseInput.statusCode }
-      : {}),
+    statusCode: responseInput.statusCode ?? STATUS_CODE.OK,
     message: responseInput.message ?? "Request successful",
     data: hasData ? (responseInput.data as T) : {},
     ...(responseTotal !== undefined ? { total: responseTotal } : {}),

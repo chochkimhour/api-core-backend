@@ -35,6 +35,7 @@ Output:
 ```json
 {
   "success": true,
+  "statusCode": 200,
   "message": "Request successful",
   "data": [{ "id": 1, "name": "Sokha", "status": "ACTIVE" }],
   "total": 1,
@@ -81,11 +82,38 @@ Output:
 ```json
 {
   "success": true,
+  "statusCode": 200,
   "message": "Request successful",
   "data": [{ "id": 1, "name": "Sokha", "status": "ACTIVE" }],
   "total": 100,
   "timestamp": "..."
 }
+```
+
+### Pagination For Requests
+
+`response()` does not show pagination in JSON. Use `getPagination(req.query)` to read pagination from API query params.
+
+When the request does not include pagination params, defaults are:
+
+```json
+{
+  "limit": 10,
+  "offset": 0
+}
+```
+
+Example request:
+
+```js
+const pagination = getPagination(req.query);
+
+const users = await getUsers({
+  limit: pagination.limit,
+  offset: pagination.offset,
+});
+
+res.json(response(users, statusCode.OK, "Users fetched successfully"));
 ```
 
 ## Express Example
@@ -127,17 +155,26 @@ app.listen(3000);
 
 `response()` is the easiest helper to remember.
 
-| Syntax | Result |
-| ------ | ------ |
-| `response(data)` | Success response with automatic `total` when `data` is an array |
-| `response(data, total)` | Success response with a real database total |
-| `response(data, statusCode.OK, message)` | Success response with status code and message |
-| `response(data, statusCode.OK, message, total)` | Success response with status code, message, and real total |
-| `response({ statusCode, message, data, total })` | Object style for full control |
+| Syntax                                           | Result                                                      |
+| ------------------------------------------------ | ----------------------------------------------------------- |
+| `response(data)`                                 | Success response with `statusCode.OK` and automatic `total` |
+| `response(data, total)`                          | Success response with a real database total                 |
+| `response(data, statusCode.OK, message)`         | Success response with custom status code and message        |
+| `response(data, statusCode.OK, message, total)`  | Success response with status code, message, and real total  |
+| `response({ statusCode, message, data, total })` | Object style for full control                               |
 
 When `data` is an array, `total` is automatically `data.length`.
 
 When input is an object like `{ data: [...], total: 100 }`, the final response unwraps it into clean `data` and top-level `total`.
+
+Pagination is handled by `getPagination(req.query)`, not shown in `response()` output. Default request pagination is:
+
+```json
+{
+  "limit": 10,
+  "offset": 0
+}
+```
 
 ## Status Codes
 
@@ -461,32 +498,32 @@ const { response } = require("api-core-backend");
 
 ### Response Helpers
 
-| Function | Purpose |
-| -------- | ------- |
-| `response(input?, statusOrTotal?, messageOrTotal?, total?)` | Easiest success response helper |
-| `successResponse(input?)` | Standard success response |
-| `errorResponse(input?)` | Standard error response |
-| `validationErrorResponse(input?)` | Validation error response |
-| `paginatedResponse(input)` | Success response with top-level `total` |
+| Function                                                    | Purpose                                 |
+| ----------------------------------------------------------- | --------------------------------------- |
+| `response(input?, statusOrTotal?, messageOrTotal?, total?)` | Easiest success response helper         |
+| `successResponse(input?)`                                   | Standard success response               |
+| `errorResponse(input?)`                                     | Standard error response                 |
+| `validationErrorResponse(input?)`                           | Validation error response               |
+| `paginatedResponse(input)`                                  | Success response with top-level `total` |
 
 ### Query Helpers
 
-| Function | Purpose |
-| -------- | ------- |
-| `getPagination(query?, options?)` | Normalizes page, limit, offset, sortBy, and sortOrder |
-| `normalizePaginationQuery(query?, options?)` | Lower-level pagination normalizer |
-| `getPaginationMeta({ page, limit, total })` | Builds full pagination metadata |
-| `getSorting(query?)` | Normalizes sorting input |
-| `getFilters(query, allowedFields)` | Returns only allowed filter fields |
-| `getSearch(query?)` | Extracts a search keyword from `q` or `search` |
+| Function                                     | Purpose                                               |
+| -------------------------------------------- | ----------------------------------------------------- |
+| `getPagination(query?, options?)`            | Normalizes page, limit, offset, sortBy, and sortOrder |
+| `normalizePaginationQuery(query?, options?)` | Lower-level pagination normalizer                     |
+| `getPaginationMeta({ page, limit, total })`  | Builds full pagination metadata                       |
+| `getSorting(query?)`                         | Normalizes sorting input                              |
+| `getFilters(query, allowedFields)`           | Returns only allowed filter fields                    |
+| `getSearch(query?)`                          | Extracts a search keyword from `q` or `search`        |
 
 ### Middleware
 
-| Function | Purpose |
-| -------- | ------- |
-| `asyncHandler(handler)` | Wraps async Express route handlers and forwards errors to `next` |
-| `errorMiddleware(error, req, res, next)` | Sends standard JSON error responses |
-| `notFoundMiddleware(req, res, next)` | Creates a `NotFoundError` for unmatched routes |
+| Function                                 | Purpose                                                          |
+| ---------------------------------------- | ---------------------------------------------------------------- |
+| `asyncHandler(handler)`                  | Wraps async Express route handlers and forwards errors to `next` |
+| `errorMiddleware(error, req, res, next)` | Sends standard JSON error responses                              |
+| `notFoundMiddleware(req, res, next)`     | Creates a `NotFoundError` for unmatched routes                   |
 
 ### Types
 

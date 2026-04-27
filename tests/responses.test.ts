@@ -35,10 +35,12 @@ describe("response helpers", () => {
 
     expect(result).toMatchObject({
       success: true,
+      statusCode: 200,
       message: "Request successful",
       data: users,
       total: 1,
     });
+    expect(result).not.toHaveProperty("pagination");
     expect(result).not.toHaveProperty("error");
   });
 
@@ -48,6 +50,7 @@ describe("response helpers", () => {
 
     expect(result).toMatchObject({
       success: true,
+      statusCode: 200,
       message: "Request successful",
       data: users,
       total: 100,
@@ -62,10 +65,12 @@ describe("response helpers", () => {
 
     expect(result).toMatchObject({
       success: true,
+      statusCode: 200,
       message: "ok",
       data: users,
       total: 1,
     });
+    expect(result).not.toHaveProperty("pagination");
   });
 
   it("creates a simple response from data, message, and total", () => {
@@ -74,10 +79,12 @@ describe("response helpers", () => {
 
     expect(result).toMatchObject({
       success: true,
+      statusCode: 200,
       message: "Users fetched successfully",
       data: users,
       total: 100,
     });
+    expect(result).not.toHaveProperty("pagination");
   });
 
   it("creates a simple response from data, status code, and message", () => {
@@ -91,6 +98,7 @@ describe("response helpers", () => {
       data: users,
       total: 1,
     });
+    expect(result).not.toHaveProperty("pagination");
   });
 
   it("creates a simple response from data, status code, message, and total", () => {
@@ -109,6 +117,7 @@ describe("response helpers", () => {
       data: users,
       total: 100,
     });
+    expect(result).not.toHaveProperty("pagination");
   });
 
   it("creates a simple response from message, data, and total", () => {
@@ -121,6 +130,7 @@ describe("response helpers", () => {
 
     expect(result).toMatchObject({
       success: true,
+      statusCode: 200,
       message: "Users fetched successfully",
       data: users,
       total: 100,
@@ -138,10 +148,12 @@ describe("response helpers", () => {
 
     expect(result).toMatchObject({
       success: true,
+      statusCode: 200,
       message: "Users fetched successfully",
       data: users,
       total: 1,
     });
+    expect(result).not.toHaveProperty("pagination");
   });
 
   it("creates a simple response using total from an object", () => {
@@ -153,10 +165,12 @@ describe("response helpers", () => {
 
     expect(result).toMatchObject({
       success: true,
+      statusCode: 200,
       message: "Request successful",
       data: users.data,
       total: 100,
     });
+    expect(result).not.toHaveProperty("pagination");
   });
 
   it("creates a simple response using object total with status code and message", () => {
@@ -173,6 +187,7 @@ describe("response helpers", () => {
       data: users.data,
       total: 100,
     });
+    expect(result).not.toHaveProperty("pagination");
   });
 
   it("creates a simple response using totalUsers from an object", () => {
@@ -184,10 +199,12 @@ describe("response helpers", () => {
 
     expect(result).toMatchObject({
       success: true,
+      statusCode: 200,
       message: "Request successful",
       data: users.data,
       total: 100,
     });
+    expect(result).not.toHaveProperty("pagination");
   });
 
   it("creates an error response", () => {
