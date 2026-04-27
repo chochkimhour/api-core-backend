@@ -8,22 +8,30 @@
 
 Clean, lightweight backend utilities for building REST APIs in Node.js and TypeScript.
 
-Use it for clean API responses, pagination, filtering, search, status codes, async error handling, request logging, and optional Swagger/OpenAPI docs.
+Use it for standard JSON responses, pagination, filtering, search, sorting, HTTP status codes, async error handling, request logging, and optional Swagger/OpenAPI docs.
 
-Created and maintained by **Choch Kimhour** from **Cambodia** &#x1F1F0;&#x1F1ED;.
+Created and maintained by **Choch Kimhour** from **Cambodia**.
 
 ## Features
 
-- Clean `response()` helper with automatic `success`, `statusCode`, `message`, `total`, and `timestamp`
-- Pagination with `max` and `offset`
-- Array pagination with automatic total calculation
+- `response()` helper for clean success responses
+- `successResponse()`, `errorResponse()`, `validationErrorResponse()`, and `paginatedResponse()`
+- Pagination helpers for `max`, `limit`, `offset`, and `page`
 - Filter, search, and sorting query helpers
 - HTTP status code constants
-- Express async handler and error middleware
-- Simple request logger
+- Express async handler, not found middleware, and error middleware
+- Request logger with one-time global config
+- Local timezone request log timestamps
+- Automatic Express route context logging
 - Optional Swagger/OpenAPI helpers
 - TypeScript types included
 - No runtime dependencies
+
+## Requirements
+
+- Node.js `>=18`
+- Express or an Express-compatible framework for middleware helpers
+- TypeScript is supported but not required
 
 ## Installation
 
@@ -31,122 +39,281 @@ Created and maintained by **Choch Kimhour** from **Cambodia** &#x1F1F0;&#x1F1ED;
 npm install api-core-backend
 ```
 
-## Quick Start
+For Swagger UI only, install the optional peer dependencies:
+
+```bash
+npm install swagger-ui-express swagger-jsdoc
+```
+
+## Import Styles
+
+ES modules:
 
 ```js
 import { response } from "api-core-backend";
-
-const users = [{ id: 1, name: "Sokha", status: "ACTIVE" }];
-
-res.json(response(users));
 ```
 
-Output:
+CommonJS:
+
+```js
+const { response } = require("api-core-backend");
+```
+
+When using `import` in `.js` files, add this to your app `package.json`:
 
 ```json
 {
-  "success": true,
-  "statusCode": 200,
-  "message": "Request successful",
-  "data": [{ "id": 1, "name": "Sokha", "status": "ACTIVE" }],
-  "total": 1,
-  "timestamp": "..."
+  "type": "module"
 }
 ```
 
-With custom status and message:
+## Project Setup From A To Z
 
-```js
-import { response, statusCode } from "api-core-backend";
+This is a complete Express setup using the main package features.
 
-res.json(response(users, statusCode.OK, "Users fetched successfully"));
+Example project structure:
+
+```text
+my-api/
+  src/
+    app.js
+    server.js
+    routes/
+      users.routes.js
+    controllers/
+      users.controller.js
 ```
 
-## Express Example
+### 1. Create The App
+
+`src/app.js`
 
 ```js
 import express from "express";
 import {
-  asyncHandler,
+  configureLogger,
+  errorMiddleware,
+  logger,
+  notFoundMiddleware,
+} from "api-core-backend";
+import { usersRouter } from "./routes/users.routes.js";
+
+const app = express();
+
+app.use(express.json());
+
+configureLogger({
+  projectName: "my-api",
+  getUser: (req) => req.user?.username,
+});
+
+app.use(logger());
+
+app.use("/api/users", usersRouter);
+
+app.use(notFoundMiddleware);
+app.use(errorMiddleware);
+
+export { app };
+```
+
+### 2. Start The Server
+
+`src/server.js`
+
+```js
+import { app } from "./app.js";
+
+const port = process.env.PORT ?? 3000;
+
+app.listen(port, () => {
+  console.log(`Server is running on port ${port}`);
+});
+```
+
+### 3. Create Routes
+
+`src/routes/users.routes.js`
+
+```js
+import { Router } from "express";
+import { asyncHandler } from "api-core-backend";
+import { createUser, findAllUsers, findUserById } from "../controllers/users.controller.js";
+
+const usersRouter = Router();
+
+usersRouter.get("/", asyncHandler(findAllUsers));
+usersRouter.get("/:id", asyncHandler(findUserById));
+usersRouter.post("/", asyncHandler(createUser));
+
+export { usersRouter };
+```
+
+Use named controller functions like `findAllUsers` and `createUser`. The logger uses these names for `method=...`.
+
+### 4. Create Controllers
+
+`src/controllers/users.controller.js`
+
+```js
+import {
+  BadRequestError,
+  NotFoundError,
   getFilters,
   getPagination,
   getSearch,
-  logger,
+  getSorting,
   paginate,
   response,
   statusCode,
 } from "api-core-backend";
 
-const app = express();
+const users = [
+  { id: "1", name: "Sokha", status: "ACTIVE", role: "ADMIN" },
+  { id: "2", name: "Dara", status: "ACTIVE", role: "USER" },
+  { id: "3", name: "Sophea", status: "INACTIVE", role: "USER" },
+];
+
+export async function findAllUsers(req, res) {
+  const pagination = getPagination(req.query);
+  const filters = getFilters(req.query, ["status", "role"]);
+  const search = getSearch(req.query);
+  const sorting = getSorting(req.query);
+
+  const filteredUsers = users
+    .filter((user) => (filters.status ? user.status === filters.status : true))
+    .filter((user) => (filters.role ? user.role === filters.role : true))
+    .filter((user) =>
+      search.keyword
+        ? user.name.toLowerCase().includes(search.keyword.toLowerCase())
+        : true,
+    )
+    .sort((a, b) => {
+      if (!sorting.sortBy) return 0;
+
+      const left = String(a[sorting.sortBy] ?? "");
+      const right = String(b[sorting.sortBy] ?? "");
+
+      return sorting.sortOrder === "desc"
+        ? right.localeCompare(left)
+        : left.localeCompare(right);
+    });
+
+  const result = paginate(filteredUsers, pagination);
+
+  return res
+    .status(statusCode.OK)
+    .json(response(result, statusCode.OK, "Users fetched successfully"));
+}
+
+export async function findUserById(req, res) {
+  const user = users.find((item) => item.id === req.params.id);
+
+  if (!user) {
+    throw new NotFoundError("User not found");
+  }
+
+  return res.json(response(user));
+}
+
+export async function createUser(req, res) {
+  if (!req.body?.name) {
+    throw new BadRequestError("Name is required");
+  }
+
+  const user = {
+    id: String(users.length + 1),
+    name: req.body.name,
+    status: req.body.status ?? "ACTIVE",
+    role: req.body.role ?? "USER",
+  };
+
+  users.push(user);
+
+  return res
+    .status(statusCode.CREATED)
+    .json(response(user, statusCode.CREATED, "User created successfully"));
+}
+```
+
+### 5. Test The API
+
+```text
+GET  http://localhost:3000/api/users
+GET  http://localhost:3000/api/users?max=2&offset=0
+GET  http://localhost:3000/api/users?status=ACTIVE
+GET  http://localhost:3000/api/users?role=USER&q=so
+GET  http://localhost:3000/api/users?sortBy=name&sortOrder=desc
+GET  http://localhost:3000/api/users/1
+POST http://localhost:3000/api/users
+```
+
+## Logger
+
+Configure the logger once during app bootstrap:
+
+```js
+import { configureLogger, logger } from "api-core-backend";
+
+configureLogger({
+  projectName: "my-api",
+  getUser: (req) => req.user?.username,
+});
 
 app.use(logger());
+```
 
-app.get(
-  "/api/users",
-  asyncHandler(async (req, res) => {
-    const pagination = getPagination(req.query);
-    const filters = getFilters(req.query, ["status"]);
-    const search = getSearch(req.query);
+Example output:
 
-    const allUsers = [
-      { id: 1, name: "Sokha", status: "ACTIVE" },
-      { id: 2, name: "Dara", status: "ACTIVE" },
-      { id: 3, name: "Sophea", status: "INACTIVE" },
-      { id: 4, name: "Vicheka", status: "ACTIVE" },
-      { id: 5, name: "Rithy", status: "INACTIVE" },
-    ];
+```text
+[my-api] 2026-04-27T16:00:00.000+07:00 INFO GET /api/users 200 6ms file=users.controller.ts method=findAllUsers by=system
+```
 
-    const filteredUsers = allUsers
-      .filter((user) =>
-        filters.status ? user.status === filters.status : true,
-      )
-      .filter((user) =>
-        search.keyword
-          ? user.name.toLowerCase().includes(search.keyword.toLowerCase())
-          : true,
-      );
+The logger:
 
-    const users = paginate(filteredUsers, pagination);
+- uses local timezone timestamps
+- uses your configured project name
+- hides request IP/source by default
+- logs `by=system` when no user is available
+- reads the matched Express route after response finish
+- infers `file=users.controller.ts` from the route path
+- infers `method=findAllUsers` from the named route handler
 
-    res.json(response(users, statusCode.OK, "Users fetched successfully"));
-  }),
-);
+Logger options:
 
-app.listen(3000, () => {
-  console.log("Server is running on port 3000");
+```js
+configureLogger({
+  projectName: "my-api",
+  includeUserAgent: true,
+  includeRequestFrom: false,
+  includeRouteContext: true,
+  controllerFileSuffix: ".controller.ts",
+  getUser: (req) => req.user?.username,
 });
 ```
 
-Try:
-
-```text
-http://localhost:3000/api/users
-http://localhost:3000/api/users?max=2&offset=0
-http://localhost:3000/api/users?status=ACTIVE
-http://localhost:3000/api/users?q=sokha
-```
-
-## Response Helper
-
-`response()` is the main helper.
+Include request IP/source only when needed:
 
 ```js
-response(data);
-response(data, statusCode.OK, "Users fetched successfully");
-response({ data, total });
+configureLogger({ includeRequestFrom: true });
 ```
 
-If `data` is an array, `total` is calculated from `data.length`.
-
-If input is `{ data, total }`, the final response stays clean:
+Override one middleware instance:
 
 ```js
-const users = {
-  data: [{ id: 1, name: "Sokha" }],
-  total: 100,
-};
+app.use(logger({ projectName: "admin-api" }));
+```
 
-res.json(response(users));
+`requestLogger()` is available as an alias for `logger()`.
+
+## Response Helpers
+
+### Basic Success Response
+
+```js
+import { response } from "api-core-backend";
+
+res.json(response({ id: 1, name: "Sokha" }));
 ```
 
 Output:
@@ -156,23 +323,82 @@ Output:
   "success": true,
   "statusCode": 200,
   "message": "Request successful",
-  "data": [{ "id": 1, "name": "Sokha" }],
-  "total": 100,
+  "data": { "id": 1, "name": "Sokha" },
   "timestamp": "..."
 }
 ```
 
+### Custom Status And Message
+
+```js
+import { response, statusCode } from "api-core-backend";
+
+res
+  .status(statusCode.CREATED)
+  .json(response(user, statusCode.CREATED, "User created successfully"));
+```
+
+### Array Response
+
+```js
+res.json(response(users));
+```
+
+If `data` is an array, `total` is calculated automatically:
+
+```json
+{
+  "success": true,
+  "statusCode": 200,
+  "message": "Request successful",
+  "data": [],
+  "total": 0,
+  "timestamp": "..."
+}
+```
+
+### Data With Total
+
+```js
+res.json(response({ data: users, total: 100 }));
+```
+
+### Other Response Helpers
+
+```js
+import {
+  errorResponse,
+  paginatedResponse,
+  successResponse,
+  validationErrorResponse,
+} from "api-core-backend";
+
+successResponse({ message: "Done", data: { id: 1 } });
+errorResponse({ message: "Something went wrong", code: "ERROR_CODE" });
+validationErrorResponse({
+  message: "Validation failed",
+  errors: [{ field: "email", message: "Email is required" }],
+});
+paginatedResponse({
+  message: "Users fetched successfully",
+  data: users,
+  page: 1,
+  max: 10,
+  total: 100,
+});
+```
+
 ## Pagination
 
-`response()` does not show pagination in JSON. Use `getPagination()` to read query params, then use `paginate()` to slice array data.
+Read pagination from query params:
 
 ```js
 import { getPagination, paginate, response } from "api-core-backend";
 
 const pagination = getPagination(req.query);
-const users = paginate(allUsers, pagination);
+const result = paginate(users, pagination);
 
-res.json(response(users));
+res.json(response(result));
 ```
 
 Default pagination:
@@ -187,83 +413,107 @@ Default pagination:
 Supported query params:
 
 ```text
+?page=1
 ?max=10&offset=0
 ?limit=10&offset=0
 ?sortBy=name&sortOrder=asc
 ```
 
-`limit` works as an alias for `max`.
-
-## Search And Filter
+Customize pagination limits:
 
 ```js
-import { getFilters, getSearch } from "api-core-backend";
+const pagination = getPagination(req.query, {
+  defaultPage: 1,
+  defaultMax: 20,
+  maxMax: 100,
+});
+```
+
+`limit` works as an alias for `max`.
+
+## Filters
+
+Only allow specific fields from the query string:
+
+```js
+import { getFilters } from "api-core-backend";
 
 const filters = getFilters(req.query, ["status", "role"]);
-const search = getSearch(req.query);
 ```
 
 Example:
 
 ```text
-/api/users?status=ACTIVE&q=sokha
+/api/users?status=ACTIVE&role=USER
 ```
 
-## Logger
+Result:
 
 ```js
-import { configureLogger, logger } from "api-core-backend";
-
-configureLogger({
-  projectName: "my-api",
-  getUser: (req) => req.user?.username,
-});
-
-app.use(logger());
+{
+  status: "ACTIVE",
+  role: "USER",
+}
 ```
 
-Terminal output:
+Unknown fields are ignored.
+
+## Search
+
+Read search keyword from `q` or `search`:
+
+```js
+import { getSearch } from "api-core-backend";
+
+const search = getSearch(req.query);
+```
+
+Examples:
 
 ```text
-[my-api] 2026-04-27T16:00:00.000+07:00 INFO GET /api/users 200 6ms file=users.controller.ts method=findAllUsers by=system
+/api/users?q=sokha
+/api/users?search=sokha
 ```
 
-Error logs:
+Result:
+
+```js
+{
+  keyword: "sokha",
+}
+```
+
+## Sorting
+
+Read sorting from `sortBy` and `sortOrder`:
+
+```js
+import { getSorting } from "api-core-backend";
+
+const sorting = getSorting(req.query);
+```
+
+Example:
 
 ```text
-[my-api] 2026-04-27T16:01:00.000+07:00 WARN GET /missing 404 3ms file=unknown method=GET by=system
-[my-api] 2026-04-27T16:02:00.000+07:00 ERROR POST /api/users 500 8ms file=users.controller.ts method=createUser by=system
+/api/users?sortBy=name&sortOrder=desc
 ```
 
-Include user-agent:
+Result:
 
 ```js
-configureLogger({ includeUserAgent: true });
+{
+  sortBy: "name",
+  sortOrder: "desc",
+}
 ```
 
-Override config for one app or middleware instance:
-
-```js
-app.use(logger({ projectName: "admin-api" }));
-```
-
-The logger automatically reads the matched Express route after the response
-finishes. For `/api/users` handled by a named function like `findAllUsers`, it
-logs `file=users.controller.ts method=findAllUsers`. Use named controller
-functions for the clearest method names.
-
-Include request IP/source only when needed:
-
-```js
-app.use(logger({ includeRequestFrom: true }));
-```
-
-`requestLogger()` is still available as an alias for `logger()`.
+`sortOrder` defaults to `"asc"`.
 
 ## Status Codes
 
 ```js
-import { statusCode } from "api-core-backend";
+import { statusCode, HTTP_STATUS } from "api-core-backend";
 
 statusCode.OK; // 200
 statusCode.CREATED; // 201
@@ -274,46 +524,74 @@ statusCode.NOT_FOUND; // 404
 statusCode.CONFLICT; // 409
 statusCode.UNPROCESSABLE_ENTITY; // 422
 statusCode.INTERNAL_SERVER_ERROR; // 500
+
+HTTP_STATUS.OK; // 200
 ```
 
 ## Error Handling
 
+Use `asyncHandler()` for async controllers:
+
+```js
+import { asyncHandler } from "api-core-backend";
+
+app.get("/api/users/:id", asyncHandler(findUserById));
+```
+
+Throw standard HTTP errors:
+
 ```js
 import {
   BadRequestError,
+  ConflictError,
+  ForbiddenError,
   NotFoundError,
+  UnauthorizedError,
   ValidationError,
-  asyncHandler,
-  errorMiddleware,
-  notFoundMiddleware,
 } from "api-core-backend";
 
-app.get(
-  "/api/users/:id",
-  asyncHandler(async (req, res) => {
-    throw new NotFoundError("User not found");
-  }),
-);
-
-app.use(notFoundMiddleware);
-app.use(errorMiddleware);
-```
-
-Validation error:
-
-```js
+throw new NotFoundError("User not found");
+throw new BadRequestError("Name is required");
+throw new UnauthorizedError("Please login first");
+throw new ForbiddenError("Permission denied");
+throw new ConflictError("Email already exists");
 throw new ValidationError("Validation failed", [
   { field: "email", message: "Email is required" },
 ]);
 ```
 
+Register error middleware after routes:
+
+```js
+import { errorMiddleware, notFoundMiddleware } from "api-core-backend";
+
+app.use(notFoundMiddleware);
+app.use(errorMiddleware);
+```
+
+Error output:
+
+```json
+{
+  "success": false,
+  "message": "User not found",
+  "error": "NOT_FOUND",
+  "details": null,
+  "timestamp": "..."
+}
+```
+
 ## Swagger
 
-Swagger is optional. Install these packages only when you need API docs:
+Swagger support is optional.
+
+Install peer dependencies:
 
 ```bash
 npm install swagger-ui-express swagger-jsdoc
 ```
+
+Mount Swagger UI:
 
 ```js
 import express from "express";
@@ -336,6 +614,21 @@ await setupSwaggerDocs(app, {
       summary: "Get users",
       responseSchemaRef: "#/components/schemas/PaginatedResponse",
     },
+    {
+      path: "/api/users/{id}",
+      method: "get",
+      tag: "Users",
+      summary: "Get user by id",
+      parameters: [
+        {
+          name: "id",
+          in: "path",
+          required: true,
+          schema: { type: "string" },
+        },
+      ],
+      responseSchemaRef: "#/components/schemas/SuccessResponse",
+    },
   ],
 });
 ```
@@ -346,7 +639,7 @@ Open:
 http://localhost:3000/api-docs
 ```
 
-You can also build an OpenAPI spec without Express:
+Create an OpenAPI spec without mounting Express:
 
 ```js
 import { createSwaggerSpec } from "api-core-backend/swagger";
@@ -358,25 +651,26 @@ const spec = createSwaggerSpec({
 });
 ```
 
-## Import Styles
+## TypeScript Example
 
-ES Modules:
+```ts
+import type { Request, Response } from "express";
+import { response, statusCode } from "api-core-backend";
 
-```js
-import { response } from "api-core-backend";
-```
+type User = {
+  id: string;
+  name: string;
+};
 
-CommonJS:
+export async function findUserById(req: Request, res: Response) {
+  const user: User = {
+    id: req.params.id,
+    name: "Sokha",
+  };
 
-```js
-const { response } = require("api-core-backend");
-```
-
-When using `import` in `.js` files, add this to your app `package.json`:
-
-```json
-{
-  "type": "module"
+  return res
+    .status(statusCode.OK)
+    .json(response<User>(user, statusCode.OK, "User fetched successfully"));
 }
 ```
 
@@ -392,45 +686,86 @@ When using `import` in `.js` files, add this to your app `package.json`:
 | `validationErrorResponse()` | Validation error response       |
 | `paginatedResponse()`       | Response with top-level `total` |
 | `statusCode`                | HTTP status code constants      |
+| `HTTP_STATUS`               | HTTP status code constants      |
 
 ### Query Helpers
 
 | Helper            | Purpose                            |
 | ----------------- | ---------------------------------- |
-| `getPagination()` | Reads `max`, `limit`, and `offset` |
+| `getPagination()` | Reads `page`, `max`, `limit`, and `offset` |
 | `paginate()`      | Slices arrays and calculates total |
+| `getPaginationMeta()` | Builds pagination metadata     |
 | `getFilters()`    | Keeps only allowed filter fields   |
 | `getSearch()`     | Reads `q` or `search`              |
 | `getSorting()`    | Reads `sortBy` and `sortOrder`     |
 
 ### Express Helpers
 
-| Helper               | Purpose                               |
-| -------------------- | ------------------------------------- |
-| `asyncHandler()`     | Wraps async route handlers            |
-| `errorMiddleware`    | Sends standard JSON errors            |
-| `notFoundMiddleware` | Handles unmatched routes              |
-| `logger()`           | Logs request time, status, and source |
-| `requestLogger()`    | Alias for `logger()`                  |
+| Helper                  | Purpose                                      |
+| ----------------------- | -------------------------------------------- |
+| `asyncHandler()`        | Wraps async route handlers                   |
+| `errorMiddleware`       | Sends standard JSON errors                   |
+| `notFoundMiddleware`    | Handles unmatched routes                     |
+| `configureLogger()`     | Sets global logger options once              |
+| `logger()`              | Logs request time, status, route, and user   |
+| `requestLogger()`       | Alias for `logger()`                         |
+| `resetLoggerConfig()`   | Clears global logger config                  |
+
+### Logger Options
+
+| Option                 | Purpose                                      |
+| ---------------------- | -------------------------------------------- |
+| `enabled`              | Disable logger when set to `false`           |
+| `projectName`          | Name shown inside log prefix                 |
+| `includeRequestFrom`   | Include request source or IP                 |
+| `includeIp`            | Alias-style option for request source        |
+| `includeUserAgent`     | Include user-agent                           |
+| `includeRouteContext`  | Include route-based file and method context  |
+| `controllerFileSuffix` | Suffix for inferred controller file          |
+| `sourceFile`           | Manually set source file                     |
+| `sourceMethod`         | Manually set source method                   |
+| `getSourceFile`        | Resolve source file from request             |
+| `getSourceMethod`      | Resolve source method from request           |
+| `getUser`              | Resolve current user from request            |
+| `log`                  | Custom log function                          |
+| `logger`               | Alias custom log function                    |
+
+### Error Classes
+
+| Class               | Status |
+| ------------------- | ------ |
+| `BadRequestError`   | 400    |
+| `UnauthorizedError` | 401    |
+| `ForbiddenError`    | 403    |
+| `NotFoundError`     | 404    |
+| `ConflictError`     | 409    |
+| `ValidationError`   | 422    |
 
 ### Swagger Helpers
 
 Import from `api-core-backend/swagger`.
 
-| Helper                   | Purpose                           |
-| ------------------------ | --------------------------------- |
-| `createSwaggerSpec()`    | Creates an OpenAPI spec           |
-| `setupSwaggerDocs()`     | Mounts Swagger UI in Express      |
-| `swaggerRoute()`         | Creates one route definition      |
-| `swaggerRoutes()`        | Creates many route definitions    |
-| `swaggerSchemas`         | Reusable OpenAPI schemas          |
-| `swaggerQueryParameters` | Reusable OpenAPI query parameters |
+| Helper                   | Purpose                      |
+| ------------------------ | ---------------------------- |
+| `createSwaggerSpec()`    | Creates an OpenAPI spec      |
+| `setupSwaggerDocs()`     | Mounts Swagger UI in Express |
+| `swaggerRoute()`         | Creates one route definition |
+| `swaggerRoutes()`        | Creates route definitions    |
+| `swaggerSchemas`         | Reusable OpenAPI schemas     |
+| `swaggerQueryParameters` | Reusable query parameters    |
 
-## Requirements
+## Common Setup Checklist
 
-- Node.js `>=18`
-- TypeScript supported
-- No runtime dependencies
+1. Install the package.
+2. Add `express.json()`.
+3. Call `configureLogger()` once.
+4. Mount `app.use(logger())` before routes.
+5. Wrap async controllers with `asyncHandler()`.
+6. Return success responses with `response()`.
+7. Throw `AppError` classes for known errors.
+8. Mount `notFoundMiddleware` after routes.
+9. Mount `errorMiddleware` last.
+10. Add Swagger only when API docs are needed.
 
 ## Links
 
