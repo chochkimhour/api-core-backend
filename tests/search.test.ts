@@ -6,6 +6,10 @@ describe("search utility", () => {
     expect(getSearch({ q: "student" })).toEqual({ keyword: "student" });
   });
 
+  it("trims search keywords", () => {
+    expect(getSearch({ q: " student " })).toEqual({ keyword: "student" });
+  });
+
   it("reads search when q is missing", () => {
     expect(getSearch({ search: "course" })).toEqual({ keyword: "course" });
   });

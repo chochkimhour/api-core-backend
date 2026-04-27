@@ -22,7 +22,10 @@ export class AppError extends Error {
     this.isOperational = true;
 
     const errorConstructor = Error as ErrorConstructor & {
-      captureStackTrace?: (targetObject: object, constructorOpt?: Function) => void;
+      captureStackTrace?: (
+        targetObject: object,
+        constructorOpt?: Function,
+      ) => void;
     };
 
     errorConstructor.captureStackTrace?.(this, new.target);

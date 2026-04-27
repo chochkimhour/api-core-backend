@@ -13,8 +13,8 @@ export function errorResponse(input: ErrorResponseInput = {}): ApiError {
     message: input.message ?? "Something went wrong",
     error: {
       code: input.code ?? "INTERNAL_SERVER_ERROR",
-      details: input.details ?? null
+      details: input.details ?? null,
     },
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   };
 }

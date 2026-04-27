@@ -14,12 +14,12 @@ export interface ValidationErrorResponseInput {
 
 /** Creates a standard validation error response. */
 export function validationErrorResponse(
-  input: ValidationErrorResponseInput = {}
+  input: ValidationErrorResponseInput = {},
 ): ValidationErrorResponse {
   return {
     success: false,
     message: input.message ?? "Validation failed",
     errors: input.errors ?? [],
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   };
 }

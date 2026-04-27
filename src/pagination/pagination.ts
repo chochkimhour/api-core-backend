@@ -2,7 +2,7 @@ import type {
   NormalizedPagination,
   PaginationMeta,
   PaginationOptions,
-  PaginationQuery
+  PaginationQuery,
 } from "../types/pagination.types";
 import type { SortOrder } from "../types/query.types";
 
@@ -11,18 +11,35 @@ const DEFAULT_LIMIT = 10;
 const MAX_LIMIT = 100;
 
 function toPositiveInteger(value: unknown, fallback: number): number {
-  const parsed = typeof value === "number" ? value : Number.parseInt(String(value), 10);
+  const parsed =
+    typeof value === "number"
+      ? value
+      : Number.parseInt(String(value ?? ""), 10);
   return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
 }
 
+function toSafeString(value: unknown): string | undefined {
+  if (typeof value !== "string" && typeof value !== "number") {
+    return undefined;
+  }
+
+  const normalized = String(value).trim();
+  return normalized.length > 0 ? normalized : undefined;
+}
+
 function normalizeSortOrder(value: unknown): SortOrder | undefined {
-  return value === "asc" || value === "desc" ? value : undefined;
+  if (typeof value !== "string") {
+    return undefined;
+  }
+
+  const normalized = value.trim().toLowerCase();
+  return normalized === "asc" || normalized === "desc" ? normalized : undefined;
 }
 
 /** Normalizes raw pagination query parameters into safe numeric values. */
 export function normalizePaginationQuery(
   query: PaginationQuery = {},
-  options: PaginationOptions = {}
+  options: PaginationOptions = {},
 ): NormalizedPagination {
   const defaultPage = options.defaultPage ?? DEFAULT_PAGE;
   const defaultLimit = options.defaultLimit ?? DEFAULT_LIMIT;
@@ -32,21 +49,22 @@ export function normalizePaginationQuery(
   const requestedLimit = toPositiveInteger(query.limit, defaultLimit);
   const limit = Math.min(requestedLimit, maxLimit);
   const offset = (page - 1) * limit;
+  const sortBy = toSafeString(query.sortBy);
   const sortOrder = normalizeSortOrder(query.sortOrder);
 
   return {
     page,
     limit,
     offset,
-    ...(query.sortBy ? { sortBy: query.sortBy } : {}),
-    ...(sortOrder ? { sortOrder } : {})
+    ...(sortBy ? { sortBy } : {}),
+    ...(sortOrder ? { sortOrder } : {}),
   };
 }
 
 /** Returns normalized pagination settings for repository or service queries. */
 export function getPagination(
   query: PaginationQuery = {},
-  options: PaginationOptions = {}
+  options: PaginationOptions = {},
 ): NormalizedPagination {
   return normalizePaginationQuery(query, options);
 }
@@ -68,6 +86,6 @@ export function getPaginationMeta(input: {
     total,
     totalPages,
     hasNextPage: totalPages > 0 && page < totalPages,
-    hasPreviousPage: page > 1 && totalPages > 0
+    hasPreviousPage: page > 1 && totalPages > 0,
   };
 }

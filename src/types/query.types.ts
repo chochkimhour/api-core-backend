@@ -1,13 +1,15 @@
 export type SortOrder = "asc" | "desc";
 
+export type QueryValue = string | number | boolean | null | undefined;
+
 export interface SortQuery {
-  sortBy?: string;
-  sortOrder?: SortOrder | string;
+  sortBy?: QueryValue;
+  sortOrder?: SortOrder | string | null;
 }
 
 export type FilterQuery = Record<string, unknown>;
 
 export interface SearchQuery {
-  q?: string;
-  search?: string;
+  q?: QueryValue;
+  search?: QueryValue;
 }

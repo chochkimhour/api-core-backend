@@ -12,12 +12,12 @@ export interface PaginatedResponseInput<T> {
 
 /** Creates a standard successful response with pagination metadata. */
 export function paginatedResponse<T = unknown>(
-  input: PaginatedResponseInput<T>
+  input: PaginatedResponseInput<T>,
 ): PaginatedResponse<T> {
   const pagination: PaginationMeta = getPaginationMeta({
     page: input.page,
     limit: input.limit,
-    total: input.total
+    total: input.total,
   });
 
   return {
@@ -25,6 +25,6 @@ export function paginatedResponse<T = unknown>(
     message: input.message ?? "Data fetched successfully",
     data: input.data ?? [],
     pagination,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   };
 }

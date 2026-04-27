@@ -7,7 +7,7 @@ import {
   HTTP_STATUS,
   NotFoundError,
   UnauthorizedError,
-  ValidationError
+  ValidationError,
 } from "../src";
 
 describe("error classes", () => {
@@ -16,7 +16,7 @@ describe("error classes", () => {
       message: "Failed",
       statusCode: HTTP_STATUS.INTERNAL_SERVER_ERROR,
       code: "FAILED",
-      details: { id: 1 }
+      details: { id: 1 },
     });
 
     expect(error).toMatchObject({
@@ -24,7 +24,7 @@ describe("error classes", () => {
       statusCode: HTTP_STATUS.INTERNAL_SERVER_ERROR,
       code: "FAILED",
       details: { id: 1 },
-      isOperational: true
+      isOperational: true,
     });
   });
 
@@ -34,6 +34,8 @@ describe("error classes", () => {
     expect(new ForbiddenError().statusCode).toBe(HTTP_STATUS.FORBIDDEN);
     expect(new NotFoundError().statusCode).toBe(HTTP_STATUS.NOT_FOUND);
     expect(new ConflictError().statusCode).toBe(HTTP_STATUS.CONFLICT);
-    expect(new ValidationError().statusCode).toBe(HTTP_STATUS.UNPROCESSABLE_ENTITY);
+    expect(new ValidationError().statusCode).toBe(
+      HTTP_STATUS.UNPROCESSABLE_ENTITY,
+    );
   });
 });

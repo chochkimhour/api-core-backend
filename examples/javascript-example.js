@@ -4,13 +4,13 @@ const pagination = getPagination({
   page: "2",
   limit: "20",
   sortBy: "createdAt",
-  sortOrder: "desc"
+  sortOrder: "desc",
 });
 
 console.log(pagination);
 console.log(
   successResponse({
     message: "Loaded from JavaScript",
-    data: { ready: true }
-  })
+    data: { ready: true },
+  }),
 );

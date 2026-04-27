@@ -1,11 +1,12 @@
 import type { SortOrder } from "./query.types";
+import type { QueryValue } from "./query.types";
 
 export interface PaginationQuery {
-  page?: string | number;
-  limit?: string | number;
-  offset?: string | number;
-  sortBy?: string;
-  sortOrder?: SortOrder | string;
+  page?: QueryValue;
+  limit?: QueryValue;
+  offset?: QueryValue;
+  sortBy?: QueryValue;
+  sortOrder?: SortOrder | string | null;
 }
 
 export interface PaginationOptions {

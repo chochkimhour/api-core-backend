@@ -3,7 +3,7 @@ import {
   asyncHandler,
   errorMiddleware,
   notFoundMiddleware,
-  successResponse
+  successResponse,
 } from "core-backend";
 
 const app = express();
@@ -18,10 +18,10 @@ app.get(
     res.json(
       successResponse({
         message: "Users fetched successfully",
-        data: users
-      })
+        data: users,
+      }),
     );
-  })
+  }),
 );
 
 app.use(notFoundMiddleware);

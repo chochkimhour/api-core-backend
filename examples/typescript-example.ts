@@ -3,11 +3,13 @@ import {
   getPagination,
   getSearch,
   successResponse,
-  type ApiResponse
+  type ApiResponse,
 } from "core-backend";
 
 const pagination = getPagination({ page: "1", limit: "10" });
-const filters = getFilters({ status: "ACTIVE", password: "secret" }, ["status"]);
+const filters = getFilters({ status: "ACTIVE", password: "secret" }, [
+  "status",
+]);
 const search = getSearch({ q: "student" });
 
 const response: ApiResponse = successResponse({
@@ -15,8 +17,8 @@ const response: ApiResponse = successResponse({
   data: {
     pagination,
     filters,
-    search
-  }
+    search,
+  },
 });
 
 console.log(response);

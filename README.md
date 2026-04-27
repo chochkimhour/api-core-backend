@@ -119,12 +119,12 @@ const pagination = getPagination({
   page: "2",
   limit: "20",
   sortBy: "createdAt",
-  sortOrder: "desc"
+  sortOrder: "desc",
 });
 
 const response = successResponse({
   message: "Users fetched successfully",
-  data: [{ id: 1, name: "Ada Lovelace" }]
+  data: [{ id: 1, name: "Ada Lovelace" }],
 });
 
 console.log(pagination);
@@ -154,7 +154,7 @@ import { successResponse } from "core-backend";
 
 const response = successResponse({
   message: "Request successful",
-  data: { id: 1, name: "User" }
+  data: { id: 1, name: "User" },
 });
 ```
 
@@ -180,7 +180,7 @@ import { errorResponse } from "core-backend";
 const response = errorResponse({
   message: "Something went wrong",
   code: "INTERNAL_SERVER_ERROR",
-  details: null
+  details: null,
 });
 ```
 
@@ -204,7 +204,7 @@ Output:
 import { validationErrorResponse } from "core-backend";
 
 const response = validationErrorResponse({
-  errors: [{ field: "email", message: "Email is required" }]
+  errors: [{ field: "email", message: "Email is required" }],
 });
 ```
 
@@ -234,7 +234,7 @@ const response = paginatedResponse({
   data: [],
   page: 1,
   limit: 10,
-  total: 100
+  total: 100,
 });
 ```
 
@@ -268,7 +268,7 @@ const pagination = getPagination({
   page: "2",
   limit: "20",
   sortBy: "createdAt",
-  sortOrder: "desc"
+  sortOrder: "desc",
 });
 ```
 
@@ -301,7 +301,7 @@ import { getPaginationMeta } from "core-backend";
 const meta = getPaginationMeta({
   page: 2,
   limit: 20,
-  total: 100
+  total: 100,
 });
 ```
 
@@ -325,7 +325,7 @@ import { getSorting } from "core-backend";
 
 const sorting = getSorting({
   sortBy: "name",
-  sortOrder: "asc"
+  sortOrder: "asc",
 });
 ```
 
@@ -347,7 +347,7 @@ import { getFilters } from "core-backend";
 
 const filters = getFilters(
   { status: "ACTIVE", role: "ADMIN", password: "123" },
-  ["status", "role"]
+  ["status", "role"],
 );
 ```
 
@@ -411,20 +411,20 @@ import {
   ForbiddenError,
   NotFoundError,
   UnauthorizedError,
-  ValidationError
+  ValidationError,
 } from "core-backend";
 
 throw new NotFoundError("User not found");
 
 throw new ValidationError("Validation failed", [
-  { field: "email", message: "Email is required" }
+  { field: "email", message: "Email is required" },
 ]);
 
 throw new AppError({
   message: "Something went wrong",
   statusCode: 500,
   code: "INTERNAL_SERVER_ERROR",
-  details: null
+  details: null,
 });
 ```
 
@@ -446,7 +446,7 @@ import {
   asyncHandler,
   errorMiddleware,
   notFoundMiddleware,
-  successResponse
+  successResponse,
 } from "core-backend";
 
 const app = express();
@@ -461,10 +461,10 @@ app.get(
     res.json(
       successResponse({
         message: "Users fetched successfully",
-        data: users
-      })
+        data: users,
+      }),
     );
-  })
+  }),
 );
 
 app.use(notFoundMiddleware);
@@ -502,7 +502,7 @@ const app = Fastify();
 app.get("/health", async () => {
   return successResponse({
     message: "Service is healthy",
-    data: { status: "ok" }
+    data: { status: "ok" },
   });
 });
 ```
@@ -519,7 +519,7 @@ export class UsersController {
   findAll() {
     return successResponse({
       message: "Users fetched successfully",
-      data: []
+      data: [],
     });
   }
 }
@@ -536,7 +536,7 @@ const app = new Koa();
 app.use((ctx) => {
   ctx.body = successResponse({
     message: "Koa response",
-    data: { ok: true }
+    data: { ok: true },
   });
 });
 ```
@@ -548,12 +548,12 @@ const { getPagination, successResponse } = require("core-backend");
 
 const pagination = getPagination({
   page: "2",
-  limit: "20"
+  limit: "20",
 });
 
 const response = successResponse({
   message: "Loaded from JavaScript",
-  data: pagination
+  data: pagination,
 });
 
 console.log(response);
@@ -568,14 +568,14 @@ import {
   getSearch,
   successResponse,
   type ApiResponse,
-  type PaginationQuery
+  type PaginationQuery,
 } from "core-backend";
 
 const query: PaginationQuery = {
   page: "1",
   limit: "10",
   sortBy: "createdAt",
-  sortOrder: "desc"
+  sortOrder: "desc",
 };
 
 const response: ApiResponse = successResponse({
@@ -583,8 +583,8 @@ const response: ApiResponse = successResponse({
   data: {
     pagination: getPagination(query),
     filters: getFilters({ status: "ACTIVE", password: "secret" }, ["status"]),
-    search: getSearch({ q: "student" })
-  }
+    search: getSearch({ q: "student" }),
+  },
 });
 ```
 
@@ -592,31 +592,31 @@ const response: ApiResponse = successResponse({
 
 ### Response Helpers
 
-| Function | Purpose |
-| --- | --- |
-| `successResponse(input?)` | Creates a standard successful API response. |
-| `errorResponse(input?)` | Creates a standard error API response. |
-| `validationErrorResponse(input?)` | Creates a standard validation error response. |
-| `paginatedResponse(input)` | Creates a successful response with pagination metadata. |
+| Function                          | Purpose                                                 |
+| --------------------------------- | ------------------------------------------------------- |
+| `successResponse(input?)`         | Creates a standard successful API response.             |
+| `errorResponse(input?)`           | Creates a standard error API response.                  |
+| `validationErrorResponse(input?)` | Creates a standard validation error response.           |
+| `paginatedResponse(input)`        | Creates a successful response with pagination metadata. |
 
 ### Query Helpers
 
-| Function | Purpose |
-| --- | --- |
-| `getPagination(query?, options?)` | Normalizes page, limit, offset, sortBy, and sortOrder. |
-| `normalizePaginationQuery(query?, options?)` | Lower-level pagination normalizer. |
-| `getPaginationMeta({ page, limit, total })` | Creates pagination metadata for API responses. |
-| `getSorting(query?)` | Normalizes sorting input. |
-| `getFilters(query, allowedFields)` | Returns only allowed filter fields. |
-| `getSearch(query?)` | Extracts a search keyword from `q` or `search`. |
+| Function                                     | Purpose                                                |
+| -------------------------------------------- | ------------------------------------------------------ |
+| `getPagination(query?, options?)`            | Normalizes page, limit, offset, sortBy, and sortOrder. |
+| `normalizePaginationQuery(query?, options?)` | Lower-level pagination normalizer.                     |
+| `getPaginationMeta({ page, limit, total })`  | Creates pagination metadata for API responses.         |
+| `getSorting(query?)`                         | Normalizes sorting input.                              |
+| `getFilters(query, allowedFields)`           | Returns only allowed filter fields.                    |
+| `getSearch(query?)`                          | Extracts a search keyword from `q` or `search`.        |
 
 ### Middleware
 
-| Function | Purpose |
-| --- | --- |
-| `asyncHandler(handler)` | Wraps async Express route handlers and forwards errors to `next`. |
-| `errorMiddleware(error, req, res, next)` | Sends standard JSON error responses. |
-| `notFoundMiddleware(req, res, next)` | Creates a `NotFoundError` for unmatched routes. |
+| Function                                 | Purpose                                                           |
+| ---------------------------------------- | ----------------------------------------------------------------- |
+| `asyncHandler(handler)`                  | Wraps async Express route handlers and forwards errors to `next`. |
+| `errorMiddleware(error, req, res, next)` | Sends standard JSON error responses.                              |
+| `notFoundMiddleware(req, res, next)`     | Creates a `NotFoundError` for unmatched routes.                   |
 
 ### Types
 
@@ -631,7 +631,7 @@ import type {
   SearchQuery,
   SortOrder,
   SortQuery,
-  ValidationErrorItem
+  ValidationErrorItem,
 } from "core-backend";
 ```
 
