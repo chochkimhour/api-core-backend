@@ -1,5 +1,3 @@
-import type { PaginationMeta } from "./pagination.types";
-
 export interface ApiResponse<T = unknown> {
   success: true;
   message: string;
@@ -13,5 +11,5 @@ export interface ValidationErrorItem {
 }
 
 export interface PaginatedResponse<T = unknown> extends ApiResponse<T[]> {
-  pagination: PaginationMeta;
+  total: number;
 }

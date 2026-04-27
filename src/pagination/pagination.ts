@@ -18,6 +18,14 @@ function toPositiveInteger(value: unknown, fallback: number): number {
   return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
 }
 
+function toNonNegativeInteger(value: unknown, fallback = 0): number {
+  const parsed =
+    typeof value === "number"
+      ? value
+      : Number.parseInt(String(value ?? ""), 10);
+  return Number.isInteger(parsed) && parsed >= 0 ? parsed : fallback;
+}
+
 function toSafeString(value: unknown): string | undefined {
   if (typeof value !== "string" && typeof value !== "number") {
     return undefined;
@@ -77,7 +85,7 @@ export function getPaginationMeta(input: {
 }): PaginationMeta {
   const page = toPositiveInteger(input.page, DEFAULT_PAGE);
   const limit = toPositiveInteger(input.limit, DEFAULT_LIMIT);
-  const total = Math.max(0, Math.trunc(input.total));
+  const total = toNonNegativeInteger(input.total);
   const totalPages = total === 0 ? 0 : Math.ceil(total / limit);
 
   return {

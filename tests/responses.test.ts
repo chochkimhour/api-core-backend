@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   errorResponse,
   paginatedResponse,
+  response,
   successResponse,
   validationErrorResponse,
 } from "../src";
@@ -27,6 +28,66 @@ describe("response helpers", () => {
     expect(response.data).toBeNull();
   });
 
+  it("creates a simple response from data", () => {
+    const users = [{ id: 1, name: "Sokha", status: "ACTIVE" }];
+    const result = response(users);
+
+    expect(result).toMatchObject({
+      success: true,
+      message: "Request successful",
+      data: users,
+      total: 1,
+    });
+    expect(result).not.toHaveProperty("error");
+  });
+
+  it("creates a simple response from data and total", () => {
+    const users = [{ id: 1, name: "Sokha", status: "ACTIVE" }];
+    const result = response(users, 100);
+
+    expect(result).toMatchObject({
+      success: true,
+      message: "Request successful",
+      data: users,
+      total: 100,
+    });
+    expect(result).not.toHaveProperty("pagination");
+    expect(result).not.toHaveProperty("error");
+  });
+
+  it("creates a simple response from message, data, and total", () => {
+    const users = [{ id: 1, name: "Sokha", status: "ACTIVE" }];
+    const result = response({
+      message: "Users fetched successfully",
+      data: users,
+      total: 100,
+    });
+
+    expect(result).toMatchObject({
+      success: true,
+      message: "Users fetched successfully",
+      data: users,
+      total: 100,
+    });
+    expect(result).not.toHaveProperty("pagination");
+    expect(result).not.toHaveProperty("error");
+  });
+
+  it("creates a simple response with automatic total from input data", () => {
+    const users = [{ id: 1, name: "Sokha", status: "ACTIVE" }];
+    const result = response({
+      message: "Users fetched successfully",
+      data: users,
+    });
+
+    expect(result).toMatchObject({
+      success: true,
+      message: "Users fetched successfully",
+      data: users,
+      total: 1,
+    });
+  });
+
   it("creates an error response", () => {
     const response = errorResponse({
       message: "Something failed",
@@ -37,10 +98,8 @@ describe("response helpers", () => {
     expect(response).toMatchObject({
       success: false,
       message: "Something failed",
-      error: {
-        code: "FAILED",
-        details: { reason: "test" },
-      },
+      error: "FAILED",
+      details: { reason: "test" },
     });
   });
 
@@ -68,14 +127,32 @@ describe("response helpers", () => {
       success: true,
       message: "Data fetched successfully",
       data: [1, 2, 3],
-      pagination: {
+      total: 25,
+    });
+    expect(response).not.toHaveProperty("pagination");
+    expect(response).not.toHaveProperty("error");
+  });
+
+  it("creates a paginated response from nested meta", () => {
+    const response = paginatedResponse({
+      message: "Users fetched successfully",
+      data: [{ id: 1 }],
+      meta: {
         page: 1,
         limit: 10,
-        total: 25,
-        totalPages: 3,
-        hasNextPage: true,
-        hasPreviousPage: false,
+        total: 1,
       },
     });
+
+    expect(response).toMatchObject({
+      success: true,
+      message: "Users fetched successfully",
+      data: [{ id: 1 }],
+      total: 1,
+    });
+    expect(response).not.toHaveProperty("pagination");
+    expect(response).not.toHaveProperty("offset");
+    expect(response).not.toHaveProperty("maxLimit");
+    expect(response).not.toHaveProperty("error");
   });
 });

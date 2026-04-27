@@ -71,4 +71,17 @@ describe("pagination utilities", () => {
       hasPreviousPage: true,
     });
   });
+
+  it("falls back to zero for invalid pagination totals", () => {
+    expect(
+      getPaginationMeta({ page: 1, limit: 10, total: undefined as never }),
+    ).toEqual({
+      page: 1,
+      limit: 10,
+      total: 0,
+      totalPages: 0,
+      hasNextPage: false,
+      hasPreviousPage: false,
+    });
+  });
 });

@@ -10,21 +10,32 @@ export interface PaginatedResponseInput<T> {
   total: number;
 }
 
+export interface PaginatedResponseWithMetaInput<T> {
+  message?: string;
+  data?: T[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+  };
+}
+
 /** Creates a standard successful response with pagination metadata. */
 export function paginatedResponse<T = unknown>(
-  input: PaginatedResponseInput<T>,
+  input: PaginatedResponseInput<T> | PaginatedResponseWithMetaInput<T>,
 ): PaginatedResponse<T> {
+  const meta = "meta" in input ? input.meta : input;
   const pagination: PaginationMeta = getPaginationMeta({
-    page: input.page,
-    limit: input.limit,
-    total: input.total,
+    page: meta.page,
+    limit: meta.limit,
+    total: meta.total,
   });
 
   return {
     success: true,
     message: input.message ?? "Data fetched successfully",
     data: input.data ?? [],
-    pagination,
+    total: pagination.total,
     timestamp: new Date().toISOString(),
   };
 }

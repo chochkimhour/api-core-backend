@@ -23,34 +23,41 @@ npm install api-core-backend
 ### TypeScript or ESM
 
 ```ts
-import { getPagination, successResponse } from "api-core-backend";
+import { response } from "api-core-backend";
 
-const pagination = getPagination({
-  page: "1",
-  limit: "10",
-});
+const users = [{ id: 1, name: "Sokha", status: "ACTIVE" }];
 
-const response = successResponse({
+const result = response({
   message: "Users fetched successfully",
-  data: [{ id: 1, name: "Sokha" }],
+  data: users,
 });
 
-console.log({ pagination, response });
+console.log(result);
 ```
 
 ### CommonJS
 
 ```js
-const { getPagination, successResponse } = require("api-core-backend");
+const { response } = require("api-core-backend");
 
-const pagination = getPagination({ page: "1", limit: "10" });
-
-const response = successResponse({
+const result = response({
   message: "Users fetched successfully",
   data: [{ id: 1, name: "Sokha" }],
 });
 
-console.log({ pagination, response });
+console.log(result);
+```
+
+Shortest style with automatic total from the array:
+
+```js
+res.json(response(users));
+```
+
+Shortest style with a real database total:
+
+```js
+res.json(response(users, totalUsers));
 ```
 
 ### Fix Node.js Module Warning
@@ -95,7 +102,7 @@ import {
   getFilters,
   getPagination,
   getSearch,
-  paginatedResponse,
+  response,
 } from "api-core-backend";
 
 const app = express();
@@ -109,18 +116,9 @@ app.get(
 
     // Use pagination, filters, and search in your database query.
     const users = [{ id: 1, name: "Sokha", status: "ACTIVE" }];
+    const totalUsers = users.length;
 
-    res.json(
-      paginatedResponse({
-        message: "Users fetched successfully",
-        data: users,
-        meta: {
-          page: pagination.page,
-          limit: pagination.limit,
-          total: users.length,
-        },
-      }),
-    );
+    res.json(response(users, totalUsers));
   }),
 );
 ```
@@ -129,10 +127,13 @@ app.get(
 
 | Need | Helper |
 | ---- | ------ |
+| Return simple JSON from data with automatic array total | `response(data)` |
+| Return simple JSON from data with real database total | `response(data, total)` |
+| Return simple JSON with custom message | `response({ message, data, total })` |
 | Return a success JSON response | `successResponse()` |
 | Return an error JSON response | `errorResponse()` |
 | Return validation errors | `validationErrorResponse()` |
-| Return data with pagination meta | `paginatedResponse()` |
+| Return data with a top-level total | `paginatedResponse()` |
 | Read `page`, `limit`, `sortBy`, `sortOrder` from query params | `getPagination()` |
 | Allow only safe filter fields | `getFilters()` |
 | Read search text from `q` or `search` | `getSearch()` |
@@ -268,6 +269,48 @@ const { successResponse, getPagination } = require("api-core-backend");
 
 ## Standard Responses
 
+### Simple Response
+
+Use `response()` when you want the easiest syntax to remember.
+
+```ts
+import { response } from "api-core-backend";
+
+const users = [{ id: 1, name: "Sokha", status: "ACTIVE" }];
+
+res.json(
+  response({
+    message: "Users fetched successfully",
+    data: users,
+    total: 100,
+  }),
+);
+```
+
+Output:
+
+```json
+{
+  "success": true,
+  "message": "Users fetched successfully",
+  "data": [{ "id": 1, "name": "Sokha", "status": "ACTIVE" }],
+  "total": 100,
+  "timestamp": "2026-04-27T10:00:00.000Z"
+}
+```
+
+For very small responses, pass data directly:
+
+```ts
+res.json(response(users));
+```
+
+If you also have a total count, pass it as the second argument:
+
+```ts
+res.json(response(users, 100));
+```
+
 ### Success Response
 
 ```ts
@@ -301,7 +344,6 @@ import { errorResponse } from "api-core-backend";
 const response = errorResponse({
   message: "Something went wrong",
   code: "INTERNAL_SERVER_ERROR",
-  details: null,
 });
 ```
 
@@ -311,10 +353,7 @@ Output:
 {
   "success": false,
   "message": "Something went wrong",
-  "error": {
-    "code": "INTERNAL_SERVER_ERROR",
-    "details": null
-  },
+  "error": "INTERNAL_SERVER_ERROR",
   "timestamp": "2026-04-27T10:00:00.000Z"
 }
 ```
@@ -366,14 +405,7 @@ Output:
   "success": true,
   "message": "Data fetched successfully",
   "data": [],
-  "pagination": {
-    "page": 1,
-    "limit": 10,
-    "total": 100,
-    "totalPages": 10,
-    "hasNextPage": true,
-    "hasPreviousPage": false
-  },
+  "total": 100,
   "timestamp": "2026-04-27T10:00:00.000Z"
 }
 ```
@@ -713,12 +745,13 @@ const response: ApiResponse = successResponse({
 
 ### Response Helpers
 
-| Function                          | Purpose                                                 |
-| --------------------------------- | ------------------------------------------------------- |
-| `successResponse(input?)`         | Creates a standard successful API response.             |
-| `errorResponse(input?)`           | Creates a standard error API response.                  |
-| `validationErrorResponse(input?)` | Creates a standard validation error response.           |
-| `paginatedResponse(input)`        | Creates a successful response with pagination metadata. |
+| Function                          | Purpose                                               |
+| --------------------------------- | ----------------------------------------------------- |
+| `response(input?)`                | Creates the easiest success response from data/input. |
+| `successResponse(input?)`         | Creates a standard successful API response.           |
+| `errorResponse(input?)`           | Creates a standard error API response.                |
+| `validationErrorResponse(input?)` | Creates a standard validation error response.         |
+| `paginatedResponse(input)`        | Creates a successful response with a top-level total. |
 
 ### Query Helpers
 
