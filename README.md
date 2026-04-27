@@ -145,15 +145,15 @@ import {
   getFilters,
   getPagination,
   getSearch,
+  logger,
   paginate,
-  requestLogger,
   response,
   statusCode,
 } from "api-core-backend";
 
 const app = express();
 
-app.use(requestLogger());
+app.use(logger());
 
 app.get(
   "/users",
@@ -508,14 +508,14 @@ import express from "express";
 import {
   asyncHandler,
   errorMiddleware,
+  logger,
   notFoundMiddleware,
-  requestLogger,
   response,
 } from "api-core-backend";
 
 const app = express();
 
-app.use(requestLogger());
+app.use(logger());
 
 app.get(
   "/users",
@@ -531,26 +531,27 @@ app.use(errorMiddleware);
 Example log:
 
 ```text
-[api-core-backend] INFO GET /users?max=10 200 4ms
+[api-core-backend] 2026-04-27T09:00:00.000Z INFO GET /users?max=10 200 4ms from=127.0.0.1
 ```
 
 Error logs are easier to spot:
 
 ```text
-[api-core-backend] WARN GET /missing 404 3ms
-[api-core-backend] ERROR POST /users 500 8ms
+[api-core-backend] 2026-04-27T09:01:00.000Z WARN GET /missing 404 3ms from=127.0.0.1
+[api-core-backend] 2026-04-27T09:02:00.000Z ERROR POST /users 500 8ms from=127.0.0.1
 ```
 
-You can include IP and user-agent:
+Request source is shown by default. You can also include user-agent:
 
 ```js
 app.use(
-  requestLogger({
-    includeIp: true,
+  logger({
     includeUserAgent: true,
   }),
 );
 ```
+
+If you already use `requestLogger()`, it still works. New examples use `logger()` because it is shorter and easier to remember.
 
 ## Swagger / OpenAPI
 
@@ -747,12 +748,13 @@ const { response } = require("api-core-backend");
 
 ### Middleware
 
-| Function                                 | Purpose                                                          |
-| ---------------------------------------- | ---------------------------------------------------------------- |
-| `asyncHandler(handler)`                  | Wraps async Express route handlers and forwards errors to `next` |
-| `errorMiddleware(error, req, res, next)` | Sends standard JSON error responses                              |
-| `notFoundMiddleware(req, res, next)`     | Creates a `NotFoundError` for unmatched routes                   |
-| `requestLogger(options?)`                | Logs method, URL, status code, and duration for each request     |
+| Function                                 | Purpose                                                           |
+| ---------------------------------------- | ----------------------------------------------------------------- |
+| `asyncHandler(handler)`                  | Wraps async Express route handlers and forwards errors to `next`  |
+| `errorMiddleware(error, req, res, next)` | Sends standard JSON error responses                               |
+| `notFoundMiddleware(req, res, next)`     | Creates a `NotFoundError` for unmatched routes                    |
+| `logger(options?)`                       | Logs time, method, URL, status code, duration, and request source |
+| `requestLogger(options?)`                | Backward-compatible alias for `logger(options?)`                  |
 
 ### Swagger Helpers
 

@@ -16,8 +16,10 @@ export type RequestLoggerNext = () => void;
 
 export interface RequestLoggerOptions {
   enabled?: boolean;
+  includeRequestFrom?: boolean;
   includeIp?: boolean;
   includeUserAgent?: boolean;
+  log?: (message: string) => void;
   logger?: (message: string) => void;
 }
 
@@ -57,11 +59,15 @@ export function formatRequestLog(input: {
   url?: string;
   statusCode?: number;
   durationMs: number;
+  timestamp?: string;
+  requestFrom?: string;
   ip?: string;
   userAgent?: string;
 }): string {
+  const requestFrom = input.requestFrom ?? input.ip;
   const parts = [
     "[api-core-backend]",
+    input.timestamp ?? new Date().toISOString(),
     getLevel(input.statusCode),
     input.method ?? "REQUEST",
     input.url ?? "/",
@@ -69,8 +75,8 @@ export function formatRequestLog(input: {
     `${input.durationMs}ms`,
   ];
 
-  if (input.ip) {
-    parts.push(`ip=${input.ip}`);
+  if (requestFrom) {
+    parts.push(`from=${requestFrom}`);
   }
 
   if (input.userAgent) {
@@ -80,8 +86,8 @@ export function formatRequestLog(input: {
   return parts.join(" ");
 }
 
-export function requestLogger(options: RequestLoggerOptions = {}) {
-  const logger = options.logger ?? console.log;
+export function logger(options: RequestLoggerOptions = {}) {
+  const log = options.log ?? options.logger ?? console.log;
 
   return (
     req: RequestLoggerRequest,
@@ -94,9 +100,12 @@ export function requestLogger(options: RequestLoggerOptions = {}) {
     }
 
     const startedAt = Date.now();
+    const shouldIncludeRequestFrom =
+      options.includeRequestFrom ?? options.includeIp ?? true;
 
     res.on?.("finish", () => {
       const durationMs = Date.now() - startedAt;
+      const requestFrom = getHeader(req, "x-forwarded-for") ?? req.ip;
       const userAgent = getHeader(req, "user-agent");
       const message = formatRequestLog({
         durationMs,
@@ -105,13 +114,15 @@ export function requestLogger(options: RequestLoggerOptions = {}) {
           ? { url: req.originalUrl ?? req.url }
           : {}),
         ...(res.statusCode !== undefined ? { statusCode: res.statusCode } : {}),
-        ...(options.includeIp ? { ip: req.ip } : {}),
+        ...(shouldIncludeRequestFrom && requestFrom ? { requestFrom } : {}),
         ...(options.includeUserAgent && userAgent ? { userAgent } : {}),
       });
 
-      logger(message);
+      log(message);
     });
 
     next();
   };
 }
+
+export const requestLogger = logger;

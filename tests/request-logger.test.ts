@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatRequestLog, requestLogger } from "../src";
+import { formatRequestLog, logger, requestLogger } from "../src";
 
 describe("request logger middleware", () => {
   it("formats request logs", () => {
@@ -9,11 +9,12 @@ describe("request logger middleware", () => {
         url: "/users?max=10",
         statusCode: 200,
         durationMs: 12,
-        ip: "127.0.0.1",
+        timestamp: "2026-04-27T09:00:00.000Z",
+        requestFrom: "127.0.0.1",
         userAgent: "vitest",
       }),
     ).toBe(
-      '[api-core-backend] INFO GET /users?max=10 200 12ms ip=127.0.0.1 ua="vitest"',
+      '[api-core-backend] 2026-04-27T09:00:00.000Z INFO GET /users?max=10 200 12ms from=127.0.0.1 ua="vitest"',
     );
   });
 
@@ -24,8 +25,11 @@ describe("request logger middleware", () => {
         url: "/missing",
         statusCode: 404,
         durationMs: 3,
+        timestamp: "2026-04-27T09:00:00.000Z",
       }),
-    ).toBe("[api-core-backend] WARN GET /missing 404 3ms");
+    ).toBe(
+      "[api-core-backend] 2026-04-27T09:00:00.000Z WARN GET /missing 404 3ms",
+    );
 
     expect(
       formatRequestLog({
@@ -33,19 +37,22 @@ describe("request logger middleware", () => {
         url: "/users",
         statusCode: 500,
         durationMs: 8,
+        timestamp: "2026-04-27T09:00:00.000Z",
       }),
-    ).toBe("[api-core-backend] ERROR POST /users 500 8ms");
+    ).toBe(
+      "[api-core-backend] 2026-04-27T09:00:00.000Z ERROR POST /users 500 8ms",
+    );
   });
 
   it("logs when the response finishes", () => {
     const logs: string[] = [];
     let finishListener: (() => void) | undefined;
-    const middleware = requestLogger({
-      logger: (message) => logs.push(message),
+    const middleware = logger({
+      log: (message) => logs.push(message),
     });
 
     middleware(
-      { method: "GET", originalUrl: "/users" },
+      { ip: "127.0.0.1", method: "GET", originalUrl: "/users" },
       {
         statusCode: 200,
         on: (_event, listener) => {
@@ -59,8 +66,12 @@ describe("request logger middleware", () => {
 
     expect(logs).toHaveLength(1);
     expect(logs[0]).toMatch(
-      /^\[api-core-backend\] INFO GET \/users 200 \d+ms$/,
+      /^\[api-core-backend\] \d{4}-\d{2}-\d{2}T.+ INFO GET \/users 200 \d+ms from=127\.0\.0\.1$/,
     );
+  });
+
+  it("keeps requestLogger as an alias", () => {
+    expect(requestLogger).toBe(logger);
   });
 
   it("skips logging when disabled", () => {
