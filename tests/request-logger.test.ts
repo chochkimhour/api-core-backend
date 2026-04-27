@@ -27,9 +27,10 @@ describe("request logger middleware", () => {
         sourceFile: "users.controller.ts",
         sourceMethod: "findAll",
         user: "kimhour",
+        requestData: '{"query":{"max":"10"}}',
       }),
     ).toBe(
-      '[my-api] 2026-04-27 16:00:00 INFO GET /users?max=10 200 12ms file=users.controller.ts method=findAll by=kimhour from=127.0.0.1 ua="vitest"',
+      '[my-api] 2026-04-27 16:00:00 INFO GET /users?max=10 200 12ms file=users.controller.ts method=findAll by=kimhour request={"query":{"max":"10"}} from=127.0.0.1 ua="vitest"',
     );
   });
 
@@ -44,7 +45,7 @@ describe("request logger middleware", () => {
         timestamp: "2026-04-27 16:00:00",
       }),
     ).toBe(
-      "[my-api] 2026-04-27 16:00:00 WARN GET /missing 404 3ms file=unknown method=GET by=system",
+      "[my-api] 2026-04-27 16:00:00 WARN GET /missing 404 3ms file=unknown method=GET by=anonymous",
     );
 
     expect(
@@ -57,7 +58,7 @@ describe("request logger middleware", () => {
         timestamp: "2026-04-27 16:00:00",
       }),
     ).toBe(
-      "[my-api] 2026-04-27 16:00:00 ERROR POST /users 500 8ms file=unknown method=POST by=system",
+      "[my-api] 2026-04-27 16:00:00 ERROR POST /users 500 8ms file=unknown method=POST by=anonymous",
     );
   });
 
@@ -130,7 +131,46 @@ describe("request logger middleware", () => {
 
     expect(logs).toHaveLength(1);
     expect(logs[0]).toMatch(
-      /^\[my-api\] \d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} INFO GET \/api\/users\?max=10 200 \d+ms file=users\.controller\.ts method=findAllUsers by=system$/,
+      /^\[my-api\] \d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} INFO GET \/api\/users\?max=10 200 \d+ms file=users\.controller\.ts method=findAllUsers by=anonymous request=\{"query":\{"max":"10"\}\}$/,
+    );
+  });
+
+  it("logs request params and redacted body json", () => {
+    const logs: string[] = [];
+    let finishListener: (() => void) | undefined;
+
+    function updateUser() {
+      return undefined;
+    }
+
+    const middleware = logger({
+      projectName: "my-api",
+      log: (message) => logs.push(message),
+    });
+
+    middleware(
+      {
+        method: "PATCH",
+        originalUrl: "/api/users/2",
+        body: { name: "Dara", password: "secret" },
+        route: {
+          path: "/users/:id",
+          stack: [{ handle: updateUser }],
+        },
+      },
+      {
+        statusCode: 200,
+        on: (_event, listener) => {
+          finishListener = listener;
+        },
+      },
+      () => undefined,
+    );
+
+    finishListener?.();
+
+    expect(logs[0]).toMatch(
+      /request=\{"params":\{"id":"2"\},"body":\{"name":"Dara","password":"\[REDACTED\]"\}\}$/,
     );
   });
 
@@ -191,7 +231,7 @@ describe("request logger middleware", () => {
         requestFrom: "127.0.0.1",
       }),
     ).toBe(
-      "[my-api] 2026-04-27 16:00:00 INFO GET /users 200 12ms file=unknown method=GET by=system from=127.0.0.1",
+      "[my-api] 2026-04-27 16:00:00 INFO GET /users 200 12ms file=unknown method=GET by=anonymous from=127.0.0.1",
     );
   });
 

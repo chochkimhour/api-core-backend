@@ -3,10 +3,12 @@ import {
   type HttpStatusCode,
 } from "../constants/http-status";
 import type { ApiResponse } from "../types/response.types";
+import { getCambodiaTimestamp } from "../utils/timestamp";
 
 export interface SuccessResponseInput<T> {
   message?: string;
   data?: T;
+  total?: number;
 }
 
 export interface ResponseInput<T> extends SuccessResponseInput<T> {
@@ -16,12 +18,24 @@ export interface ResponseInput<T> extends SuccessResponseInput<T> {
 
 export type ResponseResult<T> = ApiResponse<T | Record<string, never>> & {
   statusCode: HttpStatusCode;
-  total?: number;
+  total: number;
 };
 
-function getTotal(data: unknown, total?: number): number | undefined {
+export type SuccessResponseResult<T> = ApiResponse<T | Record<string, never>> & {
+  total: number;
+};
+
+function getTotal(data: unknown, total?: number): number {
   if (total !== undefined) {
     return total;
+  }
+
+  if (data === undefined || data === null) {
+    return 0;
+  }
+
+  if (Array.isArray(data)) {
+    return data.length;
   }
 
   if (data !== null && typeof data === "object") {
@@ -31,12 +45,14 @@ function getTotal(data: unknown, total?: number): number | undefined {
       return totalValue;
     }
 
-    if ("data" in data && Array.isArray(data.data)) {
-      return data.data.length;
+    if ("data" in data) {
+      return getTotal(data.data);
     }
+
+    return 1;
   }
 
-  return Array.isArray(data) ? data.length : undefined;
+  return 1;
 }
 
 function isResponseInput<T>(value: unknown): value is ResponseInput<T> {
@@ -55,14 +71,15 @@ function isResponseInput<T>(value: unknown): value is ResponseInput<T> {
 /** Creates a standard successful JSON API response. */
 export function successResponse<T = unknown>(
   input: SuccessResponseInput<T> = {},
-): ApiResponse<T | Record<string, never>> {
+): SuccessResponseResult<T> {
   const hasData = Object.prototype.hasOwnProperty.call(input, "data");
 
   return {
     success: true,
     message: input.message ?? "Request successful",
     data: hasData ? (input.data as T) : {},
-    timestamp: new Date().toISOString(),
+    total: getTotal(hasData ? input.data : undefined, input.total),
+    timestamp: getCambodiaTimestamp(),
   };
 }
 
@@ -108,8 +125,8 @@ export function response<T = unknown>(
     statusCode: responseInput.statusCode ?? STATUS_CODE.OK,
     message: responseInput.message ?? "Request successful",
     data: hasData ? (responseInput.data as T) : {},
-    ...(responseTotal !== undefined ? { total: responseTotal } : {}),
-    timestamp: new Date().toISOString(),
+    total: responseTotal,
+    timestamp: getCambodiaTimestamp(),
   } as ResponseResult<T>;
 
   return result;

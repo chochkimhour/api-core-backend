@@ -2,13 +2,13 @@ import type { OpenApiSchema } from "./types";
 
 const timestampSchema: OpenApiSchema = {
   type: "string",
-  format: "date-time",
-  example: "2026-04-27T10:00:00.000Z",
+  example: "2026-04-27 21:59:03",
+  description: "Cambodia local date and time in YYYY-MM-DD HH:mm:ss format.",
 };
 
 export const successResponseSchema: OpenApiSchema = {
   type: "object",
-  required: ["success", "statusCode", "message", "data", "timestamp"],
+  required: ["success", "statusCode", "message", "data", "total", "timestamp"],
   properties: {
     success: { type: "boolean", example: true },
     statusCode: { type: "integer", example: 200 },
@@ -20,7 +20,7 @@ export const successResponseSchema: OpenApiSchema = {
     total: {
       type: "integer",
       example: 20,
-      description: "Total records before pagination when available.",
+      description: "Total returned records. Single-object responses use 1.",
     },
     timestamp: timestampSchema,
   },

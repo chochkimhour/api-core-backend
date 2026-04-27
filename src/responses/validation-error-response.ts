@@ -1,4 +1,5 @@
 import type { ValidationErrorItem } from "../types/response.types";
+import { getCambodiaTimestamp } from "../utils/timestamp";
 
 export interface ValidationErrorResponse {
   success: false;
@@ -20,6 +21,6 @@ export function validationErrorResponse(
     success: false,
     message: input.message ?? "Validation failed",
     errors: input.errors ?? [],
-    timestamp: new Date().toISOString(),
+    timestamp: getCambodiaTimestamp(),
   };
 }

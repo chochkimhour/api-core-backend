@@ -19,14 +19,28 @@ describe("response helpers", () => {
       success: true,
       message: "Users fetched successfully",
       data: [{ id: 1 }],
+      total: 1,
     });
     expect(response.timestamp).toEqual(expect.any(String));
+    expect(response.timestamp).toMatch(
+      /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/,
+    );
   });
 
   it("preserves explicit null data in success responses", () => {
     const response = successResponse({ data: null });
 
     expect(response.data).toBeNull();
+    expect(response.total).toBe(0);
+  });
+
+  it("creates object success responses with total", () => {
+    const user = { id: 1, name: "Sokha" };
+
+    expect(successResponse({ data: user })).toMatchObject({
+      data: user,
+      total: 1,
+    });
   });
 
   it("creates a simple response from data", () => {
@@ -42,6 +56,49 @@ describe("response helpers", () => {
     });
     expect(result).not.toHaveProperty("pagination");
     expect(result).not.toHaveProperty("error");
+  });
+
+  it("creates a get-by-id response with total", () => {
+    const user = { id: 1, name: "Sokha", status: "ACTIVE" };
+    const result = response(user);
+
+    expect(result).toMatchObject({
+      success: true,
+      statusCode: 200,
+      message: "Request successful",
+      data: user,
+      total: 1,
+    });
+  });
+
+  it("creates CRUD object responses with total", () => {
+    const user = { id: 1, name: "Sokha", status: "ACTIVE" };
+
+    expect(response(user, statusCode.CREATED, "User created")).toMatchObject({
+      statusCode: 201,
+      message: "User created",
+      data: user,
+      total: 1,
+    });
+
+    expect(response(user, statusCode.OK, "User updated")).toMatchObject({
+      statusCode: 200,
+      message: "User updated",
+      data: user,
+      total: 1,
+    });
+  });
+
+  it("creates empty responses with zero total", () => {
+    expect(response()).toMatchObject({
+      data: undefined,
+      total: 0,
+    });
+
+    expect(response(null)).toMatchObject({
+      data: null,
+      total: 0,
+    });
   });
 
   it("creates a simple response from data and total", () => {

@@ -21,10 +21,12 @@ describe("swagger helpers", () => {
   it("exports reusable response schemas", () => {
     expect(successResponseSchema).toMatchObject({
       type: "object",
-      required: ["success", "statusCode", "message", "data", "timestamp"],
+      required: ["success", "statusCode", "message", "data", "total", "timestamp"],
       properties: {
         success: { type: "boolean", example: true },
         statusCode: { type: "integer", example: 200 },
+        total: { type: "integer", example: 20 },
+        timestamp: { example: "2026-04-27 21:59:03" },
       },
     });
 

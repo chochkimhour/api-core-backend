@@ -1,3 +1,5 @@
+import { getCambodiaTimestamp } from "../utils/timestamp";
+
 export interface RequestLoggerRequest {
   method?: string;
   originalUrl?: string;
@@ -5,6 +7,9 @@ export interface RequestLoggerRequest {
   ip?: string;
   baseUrl?: string;
   path?: string;
+  params?: Record<string, unknown>;
+  query?: Record<string, unknown>;
+  body?: unknown;
   route?: {
     path?: unknown;
     stack?: Array<{
@@ -31,6 +36,9 @@ export interface RequestLoggerOptions {
   includeIp?: boolean;
   includeUserAgent?: boolean;
   includeRouteContext?: boolean;
+  includeRequestData?: boolean;
+  maxRequestDataLength?: number;
+  redactFields?: readonly string[];
   controllerFileSuffix?: string;
   sourceFile?: string;
   sourceMethod?: string;
@@ -46,6 +54,17 @@ export type RequestLoggerConfig = RequestLoggerOptions;
 type ProcessLike = {
   env?: Record<string, string | undefined>;
 };
+
+const DEFAULT_REDACT_FIELDS = [
+  "password",
+  "passcode",
+  "token",
+  "accessToken",
+  "refreshToken",
+  "authorization",
+  "secret",
+  "apiKey",
+] as const;
 
 let globalLoggerConfig: RequestLoggerConfig = {};
 
@@ -105,24 +124,6 @@ function getDefaultProjectName(): string {
       : undefined) ??
     "app"
   );
-}
-
-function formatCambodiaDateTime(date = new Date()): string {
-  const datePart = new Intl.DateTimeFormat("en-CA", {
-    day: "2-digit",
-    month: "2-digit",
-    timeZone: "Asia/Phnom_Penh",
-    year: "numeric",
-  }).format(date);
-  const timePart = new Intl.DateTimeFormat("en-GB", {
-    hour: "2-digit",
-    hour12: false,
-    minute: "2-digit",
-    second: "2-digit",
-    timeZone: "Asia/Phnom_Penh",
-  }).format(date);
-
-  return `${datePart} ${timePart}`;
 }
 
 function formatUser(user: unknown): string | undefined {
@@ -232,6 +233,149 @@ function getRouteControllerFile(
   return segment ? `${segment}${suffix}` : undefined;
 }
 
+function hasEntries(value: unknown): value is Record<string, unknown> {
+  return (
+    !!value &&
+    typeof value === "object" &&
+    !Array.isArray(value) &&
+    Object.keys(value).length > 0
+  );
+}
+
+function sanitizeLogValue(
+  value: unknown,
+  redactFields: readonly string[],
+): unknown {
+  if (Array.isArray(value)) {
+    return value.map((item) => sanitizeLogValue(item, redactFields));
+  }
+
+  if (!value || typeof value !== "object") {
+    return value;
+  }
+
+  return Object.entries(value as Record<string, unknown>).reduce<
+    Record<string, unknown>
+  >((sanitized, [key, item]) => {
+    const shouldRedact = redactFields.some(
+      (field) => field.toLowerCase() === key.toLowerCase(),
+    );
+
+    sanitized[key] = shouldRedact
+      ? "[REDACTED]"
+      : sanitizeLogValue(item, redactFields);
+
+    return sanitized;
+  }, {});
+}
+
+function getQueryFromUrl(url?: string): Record<string, string | string[]> {
+  const queryString = url?.split("?", 2)[1];
+
+  if (!queryString) {
+    return {};
+  }
+
+  const params = new URLSearchParams(queryString);
+  const query: Record<string, string | string[]> = {};
+
+  for (const [key, value] of params.entries()) {
+    const existingValue = query[key];
+
+    if (existingValue === undefined) {
+      query[key] = value;
+    } else if (Array.isArray(existingValue)) {
+      existingValue.push(value);
+    } else {
+      query[key] = [existingValue, value];
+    }
+  }
+
+  return query;
+}
+
+function getPathSegments(path?: string): string[] {
+  return (
+    path
+      ?.split("?", 1)[0]
+      ?.split("/")
+      .filter(Boolean) ?? []
+  );
+}
+
+function inferRouteParams(req: RequestLoggerRequest): Record<string, string> {
+  if (hasEntries(req.params)) {
+    return req.params as Record<string, string>;
+  }
+
+  if (typeof req.route?.path !== "string") {
+    return {};
+  }
+
+  const routeSegments = getPathSegments(req.route.path);
+  const parameterIndexes = routeSegments
+    .map((segment, index) =>
+      segment.startsWith(":") ? { index, name: segment.slice(1) } : undefined,
+    )
+    .filter((item): item is { index: number; name: string } => !!item?.name);
+
+  if (!parameterIndexes.length) {
+    return {};
+  }
+
+  const requestSegments = getPathSegments(req.originalUrl ?? req.url);
+  const offset = Math.max(0, requestSegments.length - routeSegments.length);
+
+  return parameterIndexes.reduce<Record<string, string>>(
+    (params, { index, name }) => {
+      const value = requestSegments[offset + index];
+
+      if (value !== undefined) {
+        params[name] = decodeURIComponent(value);
+      }
+
+      return params;
+    },
+    {},
+  );
+}
+
+function formatRequestData(
+  req: RequestLoggerRequest,
+  options: RequestLoggerOptions,
+): string | undefined {
+  const requestData = {
+    params: inferRouteParams(req),
+    query: hasEntries(req.query) ? req.query : getQueryFromUrl(req.originalUrl ?? req.url),
+    ...(req.body !== undefined ? { body: req.body } : {}),
+  };
+  const compactRequestData = Object.entries(requestData).reduce<
+    Record<string, unknown>
+  >((data, [key, value]) => {
+    if (hasEntries(value)) {
+      data[key] = value;
+    }
+
+    return data;
+  }, {});
+
+  if (!Object.keys(compactRequestData).length) {
+    return undefined;
+  }
+
+  const serialized = JSON.stringify(
+    sanitizeLogValue(
+      compactRequestData,
+      options.redactFields ?? DEFAULT_REDACT_FIELDS,
+    ),
+  );
+  const maxLength = options.maxRequestDataLength ?? 500;
+
+  return serialized.length > maxLength
+    ? `${serialized.slice(0, maxLength)}...`
+    : serialized;
+}
+
 export function formatRequestLog(input: {
   projectName?: string;
   method?: string;
@@ -245,11 +389,12 @@ export function formatRequestLog(input: {
   sourceFile?: string;
   sourceMethod?: string;
   user?: string;
+  requestData?: string;
 }): string {
   const requestFrom = input.requestFrom ?? input.ip;
   const parts = [
     `[${input.projectName ?? getDefaultProjectName()}]`,
-    input.timestamp ?? formatCambodiaDateTime(),
+    input.timestamp ?? getCambodiaTimestamp(),
     getLevel(input.statusCode),
     input.method ?? "REQUEST",
     input.url ?? "/",
@@ -257,8 +402,12 @@ export function formatRequestLog(input: {
     `${input.durationMs}ms`,
     `file=${input.sourceFile ?? "unknown"}`,
     `method=${input.sourceMethod ?? input.method ?? "REQUEST"}`,
-    `by=${input.user ?? "system"}`,
+    `by=${input.user ?? "anonymous"}`,
   ];
+
+  if (input.requestData) {
+    parts.push(`request=${input.requestData}`);
+  }
 
   if (requestFrom) {
     parts.push(`from=${requestFrom}`);
@@ -319,6 +468,10 @@ export function logger(options: RequestLoggerOptions = {}) {
         resolvedOptions.sourceMethod ??
         routeSourceMethod;
       const user = resolvedOptions.getUser?.(req) ?? formatUser(req.user);
+      const requestData =
+        (resolvedOptions.includeRequestData ?? true)
+          ? formatRequestData(req, resolvedOptions)
+          : undefined;
       const message = formatRequestLog({
         ...(resolvedOptions.projectName
           ? { projectName: resolvedOptions.projectName }
@@ -334,6 +487,7 @@ export function logger(options: RequestLoggerOptions = {}) {
         ...(sourceFile ? { sourceFile } : {}),
         ...(sourceMethod ? { sourceMethod } : {}),
         ...(user ? { user } : {}),
+        ...(requestData ? { requestData } : {}),
       });
 
       log(message);

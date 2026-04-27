@@ -15,13 +15,14 @@ Created and maintained by **Choch Kimhour** from **Cambodia**.
 ## Features
 
 - `response()` helper for clean success responses
+- `total` included in success responses, including CRUD and get-by-id
 - `successResponse()`, `errorResponse()`, `validationErrorResponse()`, and `paginatedResponse()`
 - Pagination helpers for `max`, `limit`, `offset`, and `page`
 - Filter, search, and sorting query helpers
 - HTTP status code constants
 - Express async handler, not found middleware, and error middleware
 - Request logger with one-time global config
-- Cambodia local request log date and time (`YYYY-MM-DD HH:mm:ss`)
+- Cambodia local date and time for logs and response timestamps (`YYYY-MM-DD HH:mm:ss`)
 - Automatic Express route context logging
 - Optional Swagger/OpenAPI helpers
 - TypeScript types included
@@ -266,7 +267,13 @@ app.use(logger());
 Example output:
 
 ```text
-[my-api] 2026-04-27 16:00:00 INFO GET /api/users 200 6ms file=users.controller.ts method=findAllUsers by=system
+[my-api] 2026-04-27 16:00:00 INFO GET /api/users 200 6ms file=users.controller.ts method=findAllUsers by=anonymous
+```
+
+With request data:
+
+```text
+[my-api] 2026-04-27 16:00:00 INFO GET /api/users/2 200 7ms file=users.controller.ts method=findUserById by=anonymous request={"params":{"id":"2"}}
 ```
 
 The logger:
@@ -274,10 +281,12 @@ The logger:
 - uses Phnom Penh, Cambodia date and time as `YYYY-MM-DD HH:mm:ss`
 - uses your configured project name
 - hides request IP/source by default
-- logs `by=system` when no user is available
+- logs `by=anonymous` when no authenticated user is available
 - reads the matched Express route after response finish
 - infers `file=users.controller.ts` from the route path
 - infers `method=findAllUsers` from the named route handler
+- logs compact request JSON from params, query, and body
+- redacts sensitive fields like password, token, authorization, secret, and apiKey
 
 Logger options:
 
@@ -287,6 +296,8 @@ configureLogger({
   includeUserAgent: true,
   includeRequestFrom: false,
   includeRouteContext: true,
+  includeRequestData: true,
+  maxRequestDataLength: 500,
   controllerFileSuffix: ".controller.ts",
   getUser: (req) => req.user?.username,
 });
@@ -324,9 +335,13 @@ Output:
   "statusCode": 200,
   "message": "Request successful",
   "data": { "id": 1, "name": "Sokha" },
-  "timestamp": "..."
+  "total": 1,
+  "timestamp": "2026-04-27 21:59:03"
 }
 ```
+
+Single-object CRUD responses and get-by-id responses use `total: 1`.
+Empty or `null` responses use `total: 0`.
 
 ### Custom Status And Message
 
@@ -353,7 +368,7 @@ If `data` is an array, `total` is calculated automatically:
   "message": "Request successful",
   "data": [],
   "total": 0,
-  "timestamp": "..."
+  "timestamp": "2026-04-27 21:59:03"
 }
 ```
 
@@ -577,7 +592,7 @@ Error output:
   "message": "User not found",
   "error": "NOT_FOUND",
   "details": null,
-  "timestamp": "..."
+  "timestamp": "2026-04-27 21:59:03"
 }
 ```
 
@@ -680,7 +695,7 @@ export async function findUserById(req: Request, res: Response) {
 
 | Helper                      | Purpose                         |
 | --------------------------- | ------------------------------- |
-| `response()`                | Clean success response          |
+| `response()`                | Clean success response with `total` |
 | `successResponse()`         | Standard success response       |
 | `errorResponse()`           | Standard error response         |
 | `validationErrorResponse()` | Validation error response       |
@@ -721,6 +736,9 @@ export async function findUserById(req: Request, res: Response) {
 | `includeIp`            | Alias-style option for request source        |
 | `includeUserAgent`     | Include user-agent                           |
 | `includeRouteContext`  | Include route-based file and method context  |
+| `includeRequestData`   | Include compact request params/query/body JSON |
+| `maxRequestDataLength` | Max length for request JSON before truncation |
+| `redactFields`         | Field names to redact from request JSON      |
 | `controllerFileSuffix` | Suffix for inferred controller file          |
 | `sourceFile`           | Manually set source file                     |
 | `sourceMethod`         | Manually set source method                   |

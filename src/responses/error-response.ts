@@ -1,4 +1,5 @@
 import type { ApiError } from "../types/error.types";
+import { getCambodiaTimestamp } from "../utils/timestamp";
 
 export interface ErrorResponseInput {
   message?: string;
@@ -12,7 +13,7 @@ export function errorResponse(input: ErrorResponseInput = {}): ApiError {
     success: false,
     message: input.message ?? "Something went wrong",
     error: input.code ?? "INTERNAL_SERVER_ERROR",
-    timestamp: new Date().toISOString(),
+    timestamp: getCambodiaTimestamp(),
   };
 
   if (input.details !== undefined) {
