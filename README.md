@@ -6,11 +6,23 @@
 ![dependencies](https://img.shields.io/badge/dependencies-none-brightgreen)
 ![typescript](https://img.shields.io/badge/types-included-blue)
 
-Clean, lightweight backend utilities for building consistent REST APIs in Node.js.
+Clean, lightweight backend utilities for building consistent REST APIs in Node.js and TypeScript.
 
-Use `api-core-backend` for simple JSON responses, pagination, sorting, filtering, search, HTTP status constants, custom errors, and optional Express middleware. The main helpers are plain JavaScript/TypeScript functions, so they work with Express, NestJS, Fastify, Koa, Hono, serverless functions, or plain Node.js.
+Use `api-core-backend` for API response helpers, pagination, array pagination, filtering, sorting, search, HTTP status constants, custom errors, and optional Express middleware. The main helpers are plain JavaScript/TypeScript functions, so they work with Express, NestJS, Fastify, Koa, Hono, serverless functions, or plain Node.js.
 
-Created and maintained by **Choch Kimhour** from **Cambodia** 🇰🇭.
+Created and maintained by **Choch Kimhour** from **Cambodia** &#x1F1F0;&#x1F1ED;.
+
+## Best For
+
+- REST API response formatting
+- Express API response helpers
+- Node.js backend utilities
+- TypeScript backend utilities
+- Pagination with `max` and `offset`
+- Filtering, sorting, and search query helpers
+- HTTP status code constants
+- Async Express error handling
+- Clean API errors and validation errors
 
 ## Installation
 

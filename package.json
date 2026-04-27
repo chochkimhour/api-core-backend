@@ -1,9 +1,17 @@
 {
   "name": "api-core-backend",
   "version": "1.0.6",
-  "description": "Lightweight TypeScript backend utilities for clean REST APIs.",
+  "description": "Simple REST API response, pagination, filtering, search, HTTP status, and Express middleware helpers for Node.js and TypeScript backends.",
   "author": "Choch Kimhour",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://gitlab.com/chochkimhour/api-core-backend.git"
+  },
+  "homepage": "https://www.npmjs.com/package/api-core-backend",
+  "bugs": {
+    "url": "https://gitlab.com/chochkimhour/api-core-backend/-/issues"
+  },
   "type": "module",
   "sideEffects": false,
   "main": "./dist/index.cjs",
@@ -30,17 +38,50 @@
     "prepublishOnly": "npm run clean && npm run lint && npm run test && npm run build"
   },
   "keywords": [
+    "api-core-backend",
     "backend",
+    "backend-utils",
+    "backend-utilities",
     "api",
+    "api-utils",
+    "api-response",
+    "api-response-helper",
     "rest",
+    "rest-api",
+    "rest-api-response",
     "typescript",
+    "typescript-utils",
+    "javascript",
     "nodejs",
+    "node",
+    "node-api",
     "express",
+    "expressjs",
     "middleware",
+    "async-handler",
     "pagination",
+    "paginate",
+    "filter",
+    "filtering",
+    "sort",
+    "sorting",
+    "search",
     "response",
-    "errors"
+    "responses",
+    "http-status",
+    "status-code",
+    "errors",
+    "error-handling",
+    "validation",
+    "serverless",
+    "nestjs",
+    "fastify",
+    "koa",
+    "hono"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "dependencies": {},
   "devDependencies": {
     "prettier": "^3.5.3",
