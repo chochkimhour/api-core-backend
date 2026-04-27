@@ -55,6 +55,28 @@ export interface OpenApiDocument {
   [key: string]: unknown;
 }
 
+export type SwaggerRouteMethod =
+  | "get"
+  | "post"
+  | "put"
+  | "patch"
+  | "delete"
+  | "options"
+  | "head";
+
+export interface SwaggerRouteOptions {
+  method?: SwaggerRouteMethod;
+  path: string;
+  tag?: string;
+  tags?: string[];
+  summary?: string;
+  description?: string;
+  parameters?: Array<OpenApiParameter | { $ref: string }>;
+  responseDescription?: string;
+  responseSchemaRef?: string;
+  requestBodySchemaRef?: string;
+}
+
 export interface CreateSwaggerSpecOptions {
   title: string;
   version: string;
@@ -63,6 +85,7 @@ export interface CreateSwaggerSpecOptions {
   tags?: OpenApiTag[];
   openapi?: OpenApiVersion;
   paths?: Record<string, unknown>;
+  routes?: SwaggerRouteOptions[];
   components?: OpenApiComponents;
 }
 

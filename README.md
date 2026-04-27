@@ -22,6 +22,7 @@ Created and maintained by **Choch Kimhour** from **Cambodia** &#x1F1F0;&#x1F1ED;
 - Filtering, sorting, and search query helpers
 - HTTP status code constants
 - Async Express error handling
+- Request logging middleware
 - Clean API errors and validation errors
 - Optional Swagger/OpenAPI documentation
 
@@ -145,11 +146,14 @@ import {
   getPagination,
   getSearch,
   paginate,
+  requestLogger,
   response,
   statusCode,
 } from "api-core-backend";
 
 const app = express();
+
+app.use(requestLogger());
 
 app.get(
   "/users",
@@ -505,10 +509,13 @@ import {
   asyncHandler,
   errorMiddleware,
   notFoundMiddleware,
+  requestLogger,
   response,
 } from "api-core-backend";
 
 const app = express();
+
+app.use(requestLogger());
 
 app.get(
   "/users",
@@ -519,6 +526,30 @@ app.get(
 
 app.use(notFoundMiddleware);
 app.use(errorMiddleware);
+```
+
+Example log:
+
+```text
+[api-core-backend] INFO GET /users?max=10 200 4ms
+```
+
+Error logs are easier to spot:
+
+```text
+[api-core-backend] WARN GET /missing 404 3ms
+[api-core-backend] ERROR POST /users 500 8ms
+```
+
+You can include IP and user-agent:
+
+```js
+app.use(
+  requestLogger({
+    includeIp: true,
+    includeUserAgent: true,
+  }),
+);
 ```
 
 ## Swagger / OpenAPI
@@ -535,6 +566,7 @@ Import Swagger helpers from the separate subpath:
 import {
   createSwaggerSpec,
   setupSwaggerDocs,
+  swaggerRoute,
   swaggerSchemas,
   swaggerQueryParameters,
 } from "api-core-backend/swagger";
@@ -551,6 +583,21 @@ const swaggerSpec = createSwaggerSpec({
   description: "REST API documentation",
   servers: [{ url: "http://localhost:3000", description: "Local server" }],
   tags: [{ name: "Users", description: "User endpoints" }],
+  routes: [
+    {
+      path: "/users",
+      tag: "Users",
+      summary: "Get users",
+      description: "Get users with pagination, filter, and search",
+      parameters: [
+        { $ref: "#/components/parameters/Max" },
+        { $ref: "#/components/parameters/Offset" },
+        { $ref: "#/components/parameters/Q" },
+        { $ref: "#/components/parameters/Search" },
+      ],
+      responseSchemaRef: "#/components/schemas/PaginatedResponse",
+    },
+  ],
 });
 ```
 
@@ -588,6 +635,14 @@ await setupSwaggerDocs(app, {
   description: "REST API documentation",
   servers: [{ url: "http://localhost:3000" }],
   tags: [{ name: "Users" }],
+  routes: [
+    {
+      path: "/users",
+      tag: "Users",
+      summary: "Get users",
+      responseSchemaRef: "#/components/schemas/PaginatedResponse",
+    },
+  ],
 });
 ```
 
@@ -598,6 +653,18 @@ http://localhost:3000/api-docs
 ```
 
 `setupSwaggerDocs()` loads `swagger-ui-express` only when you call it. Users who do not need Swagger do not need to install Swagger packages.
+
+For a very small endpoint, this is enough:
+
+```js
+routes: [
+  {
+    path: "/users",
+    tag: "Users",
+    summary: "Get users",
+  },
+];
+```
 
 ## Error Classes
 
@@ -685,6 +752,7 @@ const { response } = require("api-core-backend");
 | `asyncHandler(handler)`                  | Wraps async Express route handlers and forwards errors to `next` |
 | `errorMiddleware(error, req, res, next)` | Sends standard JSON error responses                              |
 | `notFoundMiddleware(req, res, next)`     | Creates a `NotFoundError` for unmatched routes                   |
+| `requestLogger(options?)`                | Logs method, URL, status code, and duration for each request     |
 
 ### Swagger Helpers
 
@@ -694,6 +762,8 @@ Import from `api-core-backend/swagger`.
 | -------------------------------- | -------------------------------------------- |
 | `createSwaggerSpec(options)`     | Creates a framework-independent OpenAPI spec |
 | `setupSwaggerDocs(app, options)` | Mounts Swagger UI in Express apps            |
+| `swaggerRoute(options)`          | Creates one OpenAPI route with simple syntax |
+| `swaggerRoutes(routes)`          | Creates many OpenAPI routes                  |
 | `swaggerSchemas`                 | Reusable response and pagination schemas     |
 | `swaggerQueryParameters`         | Reusable query parameters                    |
 

@@ -9,6 +9,8 @@ import {
   searchQueryParameter,
   sortByQueryParameter,
   sortOrderQueryParameter,
+  swaggerRoute,
+  swaggerRoutes,
   successResponseSchema,
   swaggerQueryParameters,
   swaggerSchemas,
@@ -83,5 +85,69 @@ describe("swagger helpers", () => {
     });
     expect(spec.components?.schemas).toMatchObject(swaggerSchemas);
     expect(spec.components?.parameters).toMatchObject(swaggerQueryParameters);
+  });
+
+  it("creates route paths with simple route helpers", () => {
+    expect(
+      swaggerRoute({
+        path: "/users",
+        tag: "Users",
+        summary: "Get users",
+        parameters: [{ $ref: "#/components/parameters/Max" }],
+        responseSchemaRef: "#/components/schemas/PaginatedResponse",
+      }),
+    ).toMatchObject({
+      "/users": {
+        get: {
+          tags: ["Users"],
+          summary: "Get users",
+          parameters: [{ $ref: "#/components/parameters/Max" }],
+          responses: {
+            200: {
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/PaginatedResponse" },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    expect(
+      swaggerRoutes([
+        { path: "/users", method: "get", summary: "List users" },
+        { path: "/users", method: "post", summary: "Create user" },
+      ]),
+    ).toMatchObject({
+      "/users": {
+        get: { summary: "List users" },
+        post: { summary: "Create user" },
+      },
+    });
+  });
+
+  it("creates an OpenAPI spec from simple routes", () => {
+    const spec = createSwaggerSpec({
+      title: "API Core Backend",
+      version: "1.0.0",
+      routes: [
+        {
+          path: "/users",
+          tag: "Users",
+          summary: "Get users",
+        },
+      ],
+    });
+
+    expect(spec.paths).toMatchObject({
+      "/users": {
+        get: {
+          tags: ["Users"],
+          summary: "Get users",
+        },
+      },
+    });
   });
 });

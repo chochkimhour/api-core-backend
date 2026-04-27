@@ -5,6 +5,7 @@ export * from "./filters/filters";
 export * from "./middleware/async-handler";
 export * from "./middleware/error-middleware";
 export * from "./middleware/not-found-middleware";
+export * from "./middleware/request-logger";
 export * from "./pagination/pagination";
 export * from "./responses/error-response";
 export * from "./responses/paginated-response";
