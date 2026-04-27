@@ -212,7 +212,12 @@ Example:
 ## Logger
 
 ```js
-import { logger } from "api-core-backend";
+import { configureLogger, logger } from "api-core-backend";
+
+configureLogger({
+  projectName: "my-api",
+  getUser: (req) => req.user?.username,
+});
 
 app.use(logger());
 ```
@@ -220,20 +225,37 @@ app.use(logger());
 Terminal output:
 
 ```text
-[api-core-backend] 2026-04-27T09:00:00.000Z INFO GET /api/users 200 6ms from=127.0.0.1
+[my-api] 2026-04-27T16:00:00.000+07:00 INFO GET /api/users 200 6ms file=users.controller.ts method=findAllUsers by=system
 ```
 
 Error logs:
 
 ```text
-[api-core-backend] 2026-04-27T09:01:00.000Z WARN GET /missing 404 3ms from=127.0.0.1
-[api-core-backend] 2026-04-27T09:02:00.000Z ERROR POST /api/users 500 8ms from=127.0.0.1
+[my-api] 2026-04-27T16:01:00.000+07:00 WARN GET /missing 404 3ms file=unknown method=GET by=system
+[my-api] 2026-04-27T16:02:00.000+07:00 ERROR POST /api/users 500 8ms file=users.controller.ts method=createUser by=system
 ```
 
 Include user-agent:
 
 ```js
-app.use(logger({ includeUserAgent: true }));
+configureLogger({ includeUserAgent: true });
+```
+
+Override config for one app or middleware instance:
+
+```js
+app.use(logger({ projectName: "admin-api" }));
+```
+
+The logger automatically reads the matched Express route after the response
+finishes. For `/api/users` handled by a named function like `findAllUsers`, it
+logs `file=users.controller.ts method=findAllUsers`. Use named controller
+functions for the clearest method names.
+
+Include request IP/source only when needed:
+
+```js
+app.use(logger({ includeRequestFrom: true }));
 ```
 
 `requestLogger()` is still available as an alias for `logger()`.

@@ -8,7 +8,20 @@ export type AsyncRequestHandler<
 export function asyncHandler<TRequest = unknown, TResponse = unknown>(
   handler: AsyncRequestHandler<TRequest, TResponse, (error?: unknown) => void>,
 ) {
-  return (req: TRequest, res: TResponse, next: (error?: unknown) => void) => {
+  const wrapped = (
+    req: TRequest,
+    res: TResponse,
+    next: (error?: unknown) => void,
+  ) => {
     Promise.resolve(handler(req, res, next)).catch(next);
   };
+
+  if (handler.name) {
+    Object.defineProperty(wrapped, "name", {
+      value: handler.name,
+      configurable: true,
+    });
+  }
+
+  return wrapped;
 }
