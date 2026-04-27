@@ -190,23 +190,6 @@ describe("response helpers", () => {
     expect(result).not.toHaveProperty("pagination");
   });
 
-  it("creates a simple response using totalUsers from an object", () => {
-    const users = {
-      data: [{ id: 1, name: "Sokha", status: "ACTIVE" }],
-      totalUsers: 100,
-    };
-    const result = response(users);
-
-    expect(result).toMatchObject({
-      success: true,
-      statusCode: 200,
-      message: "Request successful",
-      data: users.data,
-      total: 100,
-    });
-    expect(result).not.toHaveProperty("pagination");
-  });
-
   it("creates an error response", () => {
     const response = errorResponse({
       message: "Something failed",
@@ -238,7 +221,7 @@ describe("response helpers", () => {
     const response = paginatedResponse({
       data: [1, 2, 3],
       page: 1,
-      limit: 10,
+      max: 10,
       total: 25,
     });
 
@@ -258,7 +241,7 @@ describe("response helpers", () => {
       data: [{ id: 1 }],
       meta: {
         page: 1,
-        limit: 10,
+        max: 10,
         total: 1,
       },
     });

@@ -7,8 +7,8 @@ import type {
 import type { SortOrder } from "../types/query.types";
 
 const DEFAULT_PAGE = 1;
-const DEFAULT_LIMIT = 10;
-const MAX_LIMIT = 100;
+const DEFAULT_MAX = 10;
+const MAX_MAX = 100;
 
 function toPositiveInteger(value: unknown, fallback: number): number {
   const parsed =
@@ -50,19 +50,18 @@ export function normalizePaginationQuery(
   options: PaginationOptions = {},
 ): NormalizedPagination {
   const defaultPage = options.defaultPage ?? DEFAULT_PAGE;
-  const defaultLimit = options.defaultLimit ?? DEFAULT_LIMIT;
-  const maxLimit = options.maxLimit ?? MAX_LIMIT;
+  const defaultMax = options.defaultMax ?? options.defaultLimit ?? DEFAULT_MAX;
+  const maxMax = options.maxMax ?? options.maxLimit ?? MAX_MAX;
 
   const page = toPositiveInteger(query.page, defaultPage);
-  const requestedLimit = toPositiveInteger(query.limit, defaultLimit);
-  const limit = Math.min(requestedLimit, maxLimit);
-  const offset = (page - 1) * limit;
+  const requestedMax = toPositiveInteger(query.max ?? query.limit, defaultMax);
+  const max = Math.min(requestedMax, maxMax);
+  const offset = toNonNegativeInteger(query.offset, (page - 1) * max);
   const sortBy = toSafeString(query.sortBy);
   const sortOrder = normalizeSortOrder(query.sortOrder);
 
   return {
-    page,
-    limit,
+    max,
     offset,
     ...(sortBy ? { sortBy } : {}),
     ...(sortOrder ? { sortOrder } : {}),
@@ -80,17 +79,18 @@ export function getPagination(
 /** Builds pagination metadata for API responses. */
 export function getPaginationMeta(input: {
   page: number;
-  limit: number;
+  limit?: number;
+  max?: number;
   total: number;
 }): PaginationMeta {
   const page = toPositiveInteger(input.page, DEFAULT_PAGE);
-  const limit = toPositiveInteger(input.limit, DEFAULT_LIMIT);
+  const max = toPositiveInteger(input.max ?? input.limit, DEFAULT_MAX);
   const total = toNonNegativeInteger(input.total);
-  const totalPages = total === 0 ? 0 : Math.ceil(total / limit);
+  const totalPages = total === 0 ? 0 : Math.ceil(total / max);
 
   return {
     page,
-    limit,
+    max,
     total,
     totalPages,
     hasNextPage: totalPages > 0 && page < totalPages,

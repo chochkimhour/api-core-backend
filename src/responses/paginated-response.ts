@@ -6,7 +6,8 @@ export interface PaginatedResponseInput<T> {
   message?: string;
   data?: T[];
   page: number;
-  limit: number;
+  max?: number;
+  limit?: number;
   total: number;
 }
 
@@ -15,7 +16,8 @@ export interface PaginatedResponseWithMetaInput<T> {
   data?: T[];
   meta: {
     page: number;
-    limit: number;
+    max?: number;
+    limit?: number;
     total: number;
   };
 }
@@ -25,11 +27,13 @@ export function paginatedResponse<T = unknown>(
   input: PaginatedResponseInput<T> | PaginatedResponseWithMetaInput<T>,
 ): PaginatedResponse<T> {
   const meta = "meta" in input ? input.meta : input;
-  const pagination: PaginationMeta = getPaginationMeta({
+  const paginationInput = {
     page: meta.page,
-    limit: meta.limit,
+    ...(meta.max !== undefined ? { max: meta.max } : {}),
+    ...(meta.limit !== undefined ? { limit: meta.limit } : {}),
     total: meta.total,
-  });
+  };
+  const pagination: PaginationMeta = getPaginationMeta(paginationInput);
 
   return {
     success: true,

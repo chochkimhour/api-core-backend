@@ -66,7 +66,7 @@ Output:
 
 ### Response With Total From Object
 
-If your result already contains `data` and `total`, `totalUser`, or `totalUsers`, `response()` uses it automatically.
+If your result already contains `data` and `total`, `response()` uses it automatically.
 
 ```js
 const users = {
@@ -98,7 +98,7 @@ When the request does not include pagination params, defaults are:
 
 ```json
 {
-  "limit": 10,
+  "max": 10,
   "offset": 0
 }
 ```
@@ -109,7 +109,7 @@ Example request:
 const pagination = getPagination(req.query);
 
 const users = await getUsers({
-  limit: pagination.limit,
+  max: pagination.max,
   offset: pagination.offset,
 });
 
@@ -138,10 +138,22 @@ app.get(
     const filters = getFilters(req.query, ["status", "role"]);
     const search = getSearch(req.query);
 
+    const allUsers = [
+      { id: 1, name: "Sokha", status: "ACTIVE" },
+      { id: 2, name: "Dara", status: "ACTIVE" },
+      { id: 3, name: "Sophea", status: "INACTIVE" },
+      { id: 4, name: "Vicheka", status: "ACTIVE" },
+      { id: 5, name: "Rithy", status: "INACTIVE" },
+      { id: 6, name: "Malis", status: "ACTIVE" },
+    ];
+
     // Use pagination, filters, and search in your database query.
     const users = {
-      data: [{ id: 1, name: "Sokha", status: "ACTIVE" }],
-      total: 100,
+      data: allUsers.slice(
+        pagination.offset,
+        pagination.offset + pagination.max,
+      ),
+      total: allUsers.length,
     };
 
     res.json(response(users, statusCode.OK, "Users fetched successfully"));
@@ -171,9 +183,21 @@ Pagination is handled by `getPagination(req.query)`, not shown in `response()` o
 
 ```json
 {
-  "limit": 10,
+  "max": 10,
   "offset": 0
 }
+```
+
+Try it with:
+
+```text
+http://localhost:3000/users?max=5&offset=2
+```
+
+`limit` also works as an old alias for `max`:
+
+```text
+http://localhost:3000/users?limit=5&offset=2
 ```
 
 ## Status Codes
@@ -206,8 +230,8 @@ Use `getPagination()` to normalize query values before using them in a database 
 import { getPagination } from "api-core-backend";
 
 const pagination = getPagination({
-  page: "2",
-  limit: "20",
+  max: "20",
+  offset: "40",
   sortBy: "createdAt",
   sortOrder: "desc",
 });
@@ -217,9 +241,8 @@ Output:
 
 ```json
 {
-  "page": 2,
-  "limit": 20,
-  "offset": 20,
+  "max": 20,
+  "offset": 40,
   "sortBy": "createdAt",
   "sortOrder": "desc"
 }
@@ -227,12 +250,12 @@ Output:
 
 Rules:
 
-- default `page` is `1`
-- default `limit` is `10`
-- maximum `limit` is `100`
-- invalid `page` and `limit` values fall back to defaults
+- default `max` is `10`
+- default `offset` is `0`
+- maximum `max` is `100`
+- invalid `max` and `offset` values fall back to defaults
 - `sortOrder` only allows `asc` or `desc`
-- `offset` is calculated from `page` and `limit`
+- `limit` still works as a compatibility alias for `max`
 
 ### Pagination Metadata
 
@@ -241,7 +264,7 @@ import { getPaginationMeta } from "api-core-backend";
 
 const meta = getPaginationMeta({
   page: 2,
-  limit: 20,
+  max: 20,
   total: 100,
 });
 ```
@@ -251,7 +274,7 @@ Output:
 ```json
 {
   "page": 2,
-  "limit": 20,
+  "max": 20,
   "total": 100,
   "totalPages": 5,
   "hasNextPage": true,
@@ -387,7 +410,7 @@ Output:
 
 ### paginatedResponse
 
-`paginatedResponse()` is still available for users who prefer explicit `page`, `limit`, and `total` input. The response stays clean and only shows top-level `total`.
+`paginatedResponse()` is still available for users who prefer explicit `page`, `max`, and `total` input. The response stays clean and only shows top-level `total`.
 
 ```js
 import { paginatedResponse } from "api-core-backend";
@@ -396,7 +419,7 @@ paginatedResponse({
   message: "Data fetched successfully",
   data: [],
   page: 1,
-  limit: 10,
+  max: 10,
   total: 100,
 });
 ```
@@ -508,14 +531,14 @@ const { response } = require("api-core-backend");
 
 ### Query Helpers
 
-| Function                                     | Purpose                                               |
-| -------------------------------------------- | ----------------------------------------------------- |
-| `getPagination(query?, options?)`            | Normalizes page, limit, offset, sortBy, and sortOrder |
-| `normalizePaginationQuery(query?, options?)` | Lower-level pagination normalizer                     |
-| `getPaginationMeta({ page, limit, total })`  | Builds full pagination metadata                       |
-| `getSorting(query?)`                         | Normalizes sorting input                              |
-| `getFilters(query, allowedFields)`           | Returns only allowed filter fields                    |
-| `getSearch(query?)`                          | Extracts a search keyword from `q` or `search`        |
+| Function                                     | Purpose                                        |
+| -------------------------------------------- | ---------------------------------------------- |
+| `getPagination(query?, options?)`            | Normalizes max, offset, sortBy, and sortOrder  |
+| `normalizePaginationQuery(query?, options?)` | Lower-level pagination normalizer              |
+| `getPaginationMeta({ page, max, total })`    | Builds full pagination metadata                |
+| `getSorting(query?)`                         | Normalizes sorting input                       |
+| `getFilters(query, allowedFields)`           | Returns only allowed filter fields             |
+| `getSearch(query?)`                          | Extracts a search keyword from `q` or `search` |
 
 ### Middleware
 

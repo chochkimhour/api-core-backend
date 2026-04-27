@@ -25,14 +25,7 @@ function getTotal(data: unknown, total?: number): number | undefined {
   }
 
   if (data !== null && typeof data === "object") {
-    const totalValue =
-      "total" in data
-        ? data.total
-        : "totalUsers" in data
-          ? data.totalUsers
-          : "totalUser" in data
-            ? data.totalUser
-            : undefined;
+    const totalValue = "total" in data ? data.total : undefined;
 
     if (typeof totalValue === "number" && Number.isFinite(totalValue)) {
       return totalValue;
@@ -55,9 +48,7 @@ function isResponseInput<T>(value: unknown): value is ResponseInput<T> {
     Object.prototype.hasOwnProperty.call(value, "message") ||
     Object.prototype.hasOwnProperty.call(value, "data") ||
     Object.prototype.hasOwnProperty.call(value, "statusCode") ||
-    Object.prototype.hasOwnProperty.call(value, "total") ||
-    Object.prototype.hasOwnProperty.call(value, "totalUsers") ||
-    Object.prototype.hasOwnProperty.call(value, "totalUser")
+    Object.prototype.hasOwnProperty.call(value, "total")
   );
 }
 
