@@ -1,6 +1,6 @@
 {
   "name": "api-core-backend",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Lightweight TypeScript backend utilities for clean REST APIs.",
   "author": "Choch Kimhour",
   "license": "MIT",
