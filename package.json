@@ -1,0 +1,54 @@
+{
+  "name": "core-backend",
+  "version": "1.0.0",
+  "description": "Lightweight TypeScript backend utilities for clean REST APIs.",
+  "author": "",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format esm,cjs --dts --clean --sourcemap",
+    "test": "vitest run",
+    "lint": "tsc --noEmit",
+    "format": "prettier --write .",
+    "clean": "rimraf dist",
+    "prepublishOnly": "npm run clean && npm run lint && npm run test && npm run build"
+  },
+  "keywords": [
+    "backend",
+    "api",
+    "rest",
+    "typescript",
+    "nodejs",
+    "express",
+    "middleware",
+    "pagination",
+    "response",
+    "errors"
+  ],
+  "dependencies": {},
+  "devDependencies": {
+    "prettier": "^3.5.3",
+    "rimraf": "^6.0.1",
+    "tsup": "^8.4.0",
+    "typescript": "^5.8.3",
+    "vitest": "^3.1.1"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
