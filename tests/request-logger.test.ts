@@ -30,7 +30,7 @@ describe("request logger middleware", () => {
         responseData: '{"success":true}',
       }),
     ).toBe(
-      '[my-api] 2026-04-27 16:00:00 INFO GET /users?max=10 200 12ms file=users.controller.ts method=findAll by=kimhour from=127.0.0.1 ua="vitest"\nresponse={"success":true}',
+      '[my-api] | 2026-04-27 16:00:00 | INFO GET /users?max=10 200 12ms | file=users.controller.ts | method=findAll | by=kimhour | from=127.0.0.1 | ua="vitest"\n***response={"success":true}***',
     );
   });
 
@@ -45,7 +45,7 @@ describe("request logger middleware", () => {
         timestamp: "2026-04-27 16:00:00",
       }),
     ).toBe(
-      "[my-api] 2026-04-27 16:00:00 WARN GET /missing 404 3ms file=unknown method=GET by=anonymous",
+      "[my-api] | 2026-04-27 16:00:00 | WARN GET /missing 404 3ms | file=unknown | method=GET | by=anonymous",
     );
 
     expect(
@@ -58,7 +58,7 @@ describe("request logger middleware", () => {
         timestamp: "2026-04-27 16:00:00",
       }),
     ).toBe(
-      "[my-api] 2026-04-27 16:00:00 ERROR POST /users 500 8ms file=unknown method=POST by=anonymous",
+      "[my-api] | 2026-04-27 16:00:00 | ERROR POST /users 500 8ms | file=unknown | method=POST | by=anonymous",
     );
   });
 
@@ -92,7 +92,7 @@ describe("request logger middleware", () => {
     finishListener?.();
 
     expect(logs[0]).toMatch(
-      /^\[my-api\] \d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} INFO GET \/users 200 \d+ms file=users\.controller\.ts method=findAll by=kimhour$/,
+      /^\[my-api\] \| \d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} \| INFO GET \/users 200 \d+ms \| file=users\.controller\.ts \| method=findAll \| by=kimhour$/,
     );
   });
 
@@ -136,7 +136,7 @@ describe("request logger middleware", () => {
 
     expect(logs).toHaveLength(1);
     expect(logs[0]).toMatch(
-      /^\[my-api\] \d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} INFO GET \/api\/users 200 \d+ms file=users\.controller\.ts method=findAllUsers by=anonymous\nresponse=\{"success":true,"statusCode":200,"message":"Users fetched successfully","data":\[\{"id":"1","name":"Sokha"\}\],"total":1,"timestamp":"2026-04-27 22:25:26"\}$/,
+      /^\[my-api\] \| \d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} \| INFO GET \/api\/users 200 \d+ms \| file=users\.controller\.ts \| method=findAllUsers \| by=anonymous\n\*\*\*response=\{"success":true,"statusCode":200,"message":"Users fetched successfully","data":\[\{"id":"1","name":"Sokha"\}\],"total":1,"timestamp":"2026-04-27 22:25:26"\}\*\*\*$/,
     );
   });
 
@@ -175,7 +175,7 @@ describe("request logger middleware", () => {
 
     expect(logs).toHaveLength(1);
     expect(logs[0]).toMatch(
-      /^\[my-api\] \d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} INFO GET \/api\/users\?max=10 200 \d+ms file=users\.controller\.ts method=findAllUsers by=anonymous$/,
+      /^\[my-api\] \| \d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} \| INFO GET \/api\/users\?max=10 200 \d+ms \| file=users\.controller\.ts \| method=findAllUsers \| by=anonymous$/,
     );
   });
 
@@ -302,7 +302,7 @@ describe("request logger middleware", () => {
 
     finishListener?.();
 
-    expect(logs[0]).toMatch(/file=users\.controller\.ts method=findAllUsers/);
+    expect(logs[0]).toMatch(/file=users\.controller\.ts \| method=findAllUsers/);
   });
 
   it("can still include request source when enabled", () => {
@@ -317,7 +317,7 @@ describe("request logger middleware", () => {
         requestFrom: "127.0.0.1",
       }),
     ).toBe(
-      "[my-api] 2026-04-27 16:00:00 INFO GET /users 200 12ms file=unknown method=GET by=anonymous from=127.0.0.1",
+      "[my-api] | 2026-04-27 16:00:00 | INFO GET /users 200 12ms | file=unknown | method=GET | by=anonymous | from=127.0.0.1",
     );
   });
 
@@ -366,7 +366,7 @@ describe("request logger middleware", () => {
 
     expect(logs).toHaveLength(1);
     expect(logs[0]).toMatch(
-      /^\[my-api\] \d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} INFO GET \/api\/users 200 \d+ms file=users\.controller\.ts method=findAllUsers by=kimhour$/,
+      /^\[my-api\] \| \d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} \| INFO GET \/api\/users 200 \d+ms \| file=users\.controller\.ts \| method=findAllUsers \| by=kimhour$/,
     );
   });
 

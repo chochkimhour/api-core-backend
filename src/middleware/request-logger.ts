@@ -339,14 +339,17 @@ export function formatRequestLog(input: {
   responseData?: string;
 }): string {
   const requestFrom = input.requestFrom ?? input.ip;
-  const baseParts = [
-    `[${input.projectName ?? getDefaultProjectName()}]`,
-    input.timestamp ?? getCambodiaTimestamp(),
+  const requestSummary = [
     getLevel(input.statusCode),
     input.method ?? "REQUEST",
     input.url ?? "/",
     String(input.statusCode ?? 0),
     `${input.durationMs}ms`,
+  ].join(" ");
+  const baseParts = [
+    `[${input.projectName ?? getDefaultProjectName()}]`,
+    input.timestamp ?? getCambodiaTimestamp(),
+    requestSummary,
     `file=${input.sourceFile ?? "unknown"}`,
     `method=${input.sourceMethod ?? input.method ?? "REQUEST"}`,
     `by=${input.user ?? "anonymous"}`,
@@ -361,7 +364,7 @@ export function formatRequestLog(input: {
     extraParts.push(`ua="${input.userAgent}"`);
   }
 
-  const baseMessage = [...baseParts, ...extraParts].join(" ");
+  const baseMessage = [...baseParts, ...extraParts].join(" | ");
 
   const lines = [baseMessage];
 
@@ -370,7 +373,7 @@ export function formatRequestLog(input: {
   }
 
   if (input.responseData) {
-    lines.push(`response=${input.responseData}`);
+    lines.push(`***response=${input.responseData}***`);
   }
 
   return lines.join("\n");

@@ -267,14 +267,14 @@ app.use(logger());
 Example output:
 
 ```text
-[my-api] 2026-04-27 16:00:00 INFO GET /api/users 200 6ms file=users.controller.ts method=findAllUsers by=anonymous
+[my-api] | 2026-04-27 16:00:00 | INFO GET /api/users 200 6ms | file=users.controller.ts | method=findAllUsers | by=anonymous
 ```
 
 With response data:
 
 ```text
-[my-api] 2026-04-27 16:00:00 INFO GET /api/users 200 6ms file=users.controller.ts method=findAllUsers by=anonymous
-response={"success":true,"statusCode":200,"message":"Users fetched successfully","data":[{"id":"1","name":"Sokha","status":"ACTIVE","role":"ADMIN"}],"total":1,"timestamp":"2026-04-27 16:00:00"}
+[my-api] | 2026-04-27 16:00:00 | INFO GET /api/users 200 6ms | file=users.controller.ts | method=findAllUsers | by=anonymous
+***response={"success":true,"statusCode":200,"message":"Users fetched successfully","data":[{"id":"1","name":"Sokha","status":"ACTIVE","role":"ADMIN"}],"total":1,"timestamp":"2026-04-27 16:00:00"}***
 ```
 
 The logger:
