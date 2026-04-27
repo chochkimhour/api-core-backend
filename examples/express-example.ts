@@ -4,7 +4,7 @@ import {
   errorMiddleware,
   notFoundMiddleware,
   successResponse,
-} from "core-backend";
+} from "api-core-backend";
 
 const app = express();
 

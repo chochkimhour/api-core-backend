@@ -1,5 +1,5 @@
 {
-  "name": "core-backend",
+  "name": "api-core-backend",
   "version": "1.0.0",
   "description": "Lightweight TypeScript backend utilities for clean REST APIs.",
   "author": "Choch Kimhour",

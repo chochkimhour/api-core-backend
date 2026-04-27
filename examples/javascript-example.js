@@ -1,4 +1,4 @@
-const { getPagination, successResponse } = require("core-backend");
+const { getPagination, successResponse } = require("api-core-backend");
 
 const pagination = getPagination({
   page: "2",

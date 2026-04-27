@@ -1,13 +1,13 @@
-# core-backend
+# api-core-backend
 
-[![npm version](https://img.shields.io/npm/v/core-backend?label=npm)](https://www.npmjs.com/package/core-backend)
-[![license](https://img.shields.io/npm/l/core-backend?label=license)](LICENSE)
-[![downloads](https://img.shields.io/npm/dm/core-backend?label=downloads)](https://www.npmjs.com/package/core-backend)
+[![npm version](https://img.shields.io/npm/v/api-core-backend?label=npm)](https://www.npmjs.com/package/api-core-backend)
+[![license](https://img.shields.io/npm/l/api-core-backend?label=license)](LICENSE)
+[![downloads](https://img.shields.io/npm/dm/api-core-backend?label=downloads)](https://www.npmjs.com/package/api-core-backend)
 ![dependencies](https://img.shields.io/badge/dependencies-none-brightgreen)
 
 Clean, lightweight backend utilities for building consistent REST APIs in Node.js.
 
-`core-backend` helps you standardize common backend patterns such as JSON responses, pagination, sorting, filtering, searching, HTTP status codes, custom errors, and optional Express middleware. The core utilities are plain TypeScript functions, so they can be used with Express, NestJS, Fastify, Koa, Hono, AdonisJS, or plain Node.js.
+`api-core-backend` helps you standardize common backend patterns such as JSON responses, pagination, sorting, filtering, searching, HTTP status codes, custom errors, and optional Express middleware. The core utilities are plain TypeScript functions, so they can be used with Express, NestJS, Fastify, Koa, Hono, AdonisJS, or plain Node.js.
 
 Created and maintained by **Choch Kimhour** from Cambodia 🇰🇭.
 
@@ -23,7 +23,7 @@ Most backend APIs repeat the same small patterns again and again:
 - custom HTTP errors
 - async error handling in Express
 
-`core-backend` keeps those patterns clean, reusable, and framework-independent.
+`api-core-backend` keeps those patterns clean, reusable, and framework-independent.
 
 ## Features
 
@@ -42,7 +42,7 @@ Most backend APIs repeat the same small patterns again and again:
 ## Installation
 
 ```bash
-npm install core-backend
+npm install api-core-backend
 ```
 
 ## Requirements
@@ -52,7 +52,7 @@ npm install core-backend
 
 ## JavaScript and TypeScript Support
 
-`core-backend` works with both JavaScript and TypeScript projects.
+`api-core-backend` works with both JavaScript and TypeScript projects.
 
 - JavaScript projects can use it with `require()`
 - TypeScript projects can use it with `import`
@@ -60,16 +60,16 @@ npm install core-backend
 - No extra type package is required
 
 ```js
-const { successResponse } = require("core-backend");
+const { successResponse } = require("api-core-backend");
 ```
 
 ```ts
-import { successResponse, type ApiResponse } from "core-backend";
+import { successResponse, type ApiResponse } from "api-core-backend";
 ```
 
 ## Supported Frameworks and Runtimes
 
-`core-backend` can be used with almost any JavaScript or TypeScript backend because the main utilities are plain functions that return plain objects.
+`api-core-backend` can be used with almost any JavaScript or TypeScript backend because the main utilities are plain functions that return plain objects.
 
 Commonly supported runtimes and frameworks:
 
@@ -113,7 +113,7 @@ Only the Express middleware helpers are Express-style. The response helpers, pag
 ## Quick Start
 
 ```ts
-import { getPagination, successResponse } from "core-backend";
+import { getPagination, successResponse } from "api-core-backend";
 
 const pagination = getPagination({
   page: "2",
@@ -136,13 +136,13 @@ console.log(response);
 ### TypeScript or ESM
 
 ```ts
-import { successResponse, getPagination } from "core-backend";
+import { successResponse, getPagination } from "api-core-backend";
 ```
 
 ### CommonJS
 
 ```js
-const { successResponse, getPagination } = require("core-backend");
+const { successResponse, getPagination } = require("api-core-backend");
 ```
 
 ## Standard Responses
@@ -150,7 +150,7 @@ const { successResponse, getPagination } = require("core-backend");
 ### Success Response
 
 ```ts
-import { successResponse } from "core-backend";
+import { successResponse } from "api-core-backend";
 
 const response = successResponse({
   message: "Request successful",
@@ -175,7 +175,7 @@ Output:
 ### Error Response
 
 ```ts
-import { errorResponse } from "core-backend";
+import { errorResponse } from "api-core-backend";
 
 const response = errorResponse({
   message: "Something went wrong",
@@ -201,7 +201,7 @@ Output:
 ### Validation Error Response
 
 ```ts
-import { validationErrorResponse } from "core-backend";
+import { validationErrorResponse } from "api-core-backend";
 
 const response = validationErrorResponse({
   errors: [{ field: "email", message: "Email is required" }],
@@ -227,7 +227,7 @@ Output:
 ### Paginated Response
 
 ```ts
-import { paginatedResponse } from "core-backend";
+import { paginatedResponse } from "api-core-backend";
 
 const response = paginatedResponse({
   message: "Data fetched successfully",
@@ -262,7 +262,7 @@ Output:
 Use `getPagination()` to safely normalize query values before passing them to a service, repository, ORM, or database query.
 
 ```ts
-import { getPagination } from "core-backend";
+import { getPagination } from "api-core-backend";
 
 const pagination = getPagination({
   page: "2",
@@ -296,7 +296,7 @@ Rules:
 ### Pagination Metadata
 
 ```ts
-import { getPaginationMeta } from "core-backend";
+import { getPaginationMeta } from "api-core-backend";
 
 const meta = getPaginationMeta({
   page: 2,
@@ -321,7 +321,7 @@ Output:
 ## Sorting
 
 ```ts
-import { getSorting } from "core-backend";
+import { getSorting } from "api-core-backend";
 
 const sorting = getSorting({
   sortBy: "name",
@@ -343,7 +343,7 @@ Output:
 Use `getFilters()` to prevent users from filtering by fields you do not allow.
 
 ```ts
-import { getFilters } from "core-backend";
+import { getFilters } from "api-core-backend";
 
 const filters = getFilters(
   { status: "ACTIVE", role: "ADMIN", password: "123" },
@@ -365,7 +365,7 @@ The `password` field is ignored because it is not in the allowed field list.
 ## Search
 
 ```ts
-import { getSearch } from "core-backend";
+import { getSearch } from "api-core-backend";
 
 const search = getSearch({ q: "student" });
 ```
@@ -388,7 +388,7 @@ getSearch({ search: "student" });
 ## HTTP Status Constants
 
 ```ts
-import { HTTP_STATUS } from "core-backend";
+import { HTTP_STATUS } from "api-core-backend";
 
 HTTP_STATUS.OK; // 200
 HTTP_STATUS.CREATED; // 201
@@ -412,7 +412,7 @@ import {
   NotFoundError,
   UnauthorizedError,
   ValidationError,
-} from "core-backend";
+} from "api-core-backend";
 
 throw new NotFoundError("User not found");
 
@@ -447,7 +447,7 @@ import {
   errorMiddleware,
   notFoundMiddleware,
   successResponse,
-} from "core-backend";
+} from "api-core-backend";
 
 const app = express();
 
@@ -481,7 +481,7 @@ The main utilities return plain JavaScript objects. That means you can use them 
 
 ```ts
 import http from "node:http";
-import { successResponse } from "core-backend";
+import { successResponse } from "api-core-backend";
 
 const server = http.createServer((_req, res) => {
   res.setHeader("Content-Type", "application/json");
@@ -495,7 +495,7 @@ server.listen(3000);
 
 ```ts
 import Fastify from "fastify";
-import { successResponse } from "core-backend";
+import { successResponse } from "api-core-backend";
 
 const app = Fastify();
 
@@ -511,7 +511,7 @@ app.get("/health", async () => {
 
 ```ts
 import { Controller, Get } from "@nestjs/common";
-import { successResponse } from "core-backend";
+import { successResponse } from "api-core-backend";
 
 @Controller("users")
 export class UsersController {
@@ -529,7 +529,7 @@ export class UsersController {
 
 ```ts
 import Koa from "koa";
-import { successResponse } from "core-backend";
+import { successResponse } from "api-core-backend";
 
 const app = new Koa();
 
@@ -544,7 +544,7 @@ app.use((ctx) => {
 ## JavaScript Example
 
 ```js
-const { getPagination, successResponse } = require("core-backend");
+const { getPagination, successResponse } = require("api-core-backend");
 
 const pagination = getPagination({
   page: "2",
@@ -569,7 +569,7 @@ import {
   successResponse,
   type ApiResponse,
   type PaginationQuery,
-} from "core-backend";
+} from "api-core-backend";
 
 const query: PaginationQuery = {
   page: "1",
@@ -632,7 +632,7 @@ import type {
   SortOrder,
   SortQuery,
   ValidationErrorItem,
-} from "core-backend";
+} from "api-core-backend";
 ```
 
 ## License

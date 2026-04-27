@@ -4,7 +4,7 @@ import {
   getSearch,
   successResponse,
   type ApiResponse,
-} from "core-backend";
+} from "api-core-backend";
 
 const pagination = getPagination({ page: "1", limit: "10" });
 const filters = getFilters({ status: "ACTIVE", password: "secret" }, [
