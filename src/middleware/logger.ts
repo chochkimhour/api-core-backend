@@ -58,6 +58,7 @@ export type RequestLoggerOptions = LoggerOptions;
 export type RequestLoggerConfig = LoggerConfig;
 
 type ProcessLike = {
+  argv?: string[];
   env?: Record<string, string | undefined>;
 };
 
@@ -126,6 +127,28 @@ function getDefaultProjectName(): string {
       : undefined) ??
     "app"
   );
+}
+
+function getFileNameFromPath(path?: string): string | undefined {
+  const fileName = path?.split(/[\\/]/).filter(Boolean).pop();
+
+  return fileName && fileName.includes(".") ? fileName : undefined;
+}
+
+function getRuntimeSourceFile(): string | undefined {
+  const processLike = (globalThis as { process?: ProcessLike }).process;
+  const entryFile = processLike?.argv?.[1];
+
+  if (
+    !entryFile ||
+    /[\\/]node_modules[\\/]/.test(entryFile) ||
+    /[\\/]\.bin[\\/]/.test(entryFile) ||
+    /(?:vitest|tsx|ts-node|nodemon)(?:\.[cm]?js)?$/i.test(entryFile)
+  ) {
+    return undefined;
+  }
+
+  return getFileNameFromPath(entryFile);
 }
 
 function formatUser(user: unknown): string | undefined {
@@ -430,6 +453,7 @@ export function logger(options: LoggerOptions = {}) {
       const sourceFile =
         resolvedOptions.getSourceFile?.(req) ??
         resolvedOptions.sourceFile ??
+        getRuntimeSourceFile() ??
         routeSourceFile;
       const sourceMethod =
         resolvedOptions.getSourceMethod?.(req) ??

@@ -46,37 +46,14 @@ Express middleware helpers such as `logger()`, `asyncHandler()`, `notFoundMiddle
 
 ## Features
 
-- Standard JSON success responses
-- Standard JSON error responses
-- Validation error response helper
-- Paginated response helper
-- Automatic `total` calculation for arrays and single objects
-- `max` and `offset` pagination helpers
-- Pagination metadata helper
-- Array pagination helper for in-memory data
-- Query filter helper with allowed fields
-- Search helper using `q` or `search`
-- Sorting helper using `sortBy` and `sortOrder`
-- HTTP status code constants
-- Typed HTTP error classes
-- Express async handler wrapper
-- Express not found middleware
-- Express error middleware
-- Request logger middleware
-- Global logger configuration
-- Per-route logger override support
-- Cambodia local timestamp format
-- Route file and handler name inference for logs
-- Optional request body logging
-- Optional response body logging
-- Sensitive field redaction for logs
-- Optional request source and user-agent logging
-- Optional Swagger/OpenAPI spec builder
-- Optional Swagger UI setup helper
-- Reusable Swagger schemas and query parameters
-- TypeScript types included
-- ESM and CommonJS builds
-- No runtime dependencies
+- Consistent success, error, validation, and paginated JSON responses
+- Simple `max` and `offset` pagination with automatic `total`
+- Query helpers for filters, search, and sorting
+- HTTP status constants and typed HTTP error classes
+- Express helpers for async handlers, not found routes, and error handling
+- Request logger with project, file, method, status, duration, user, and safe JSON output
+- Optional Swagger/OpenAPI helpers for docs
+- TypeScript types, ESM and CommonJS builds, and no runtime dependencies
 
 ## Installation
 
@@ -227,13 +204,15 @@ app.use(logger());
 Example output:
 
 ```text
-[my-api] | 2026-04-27 16:00:00 | INFO GET /api/users 200 6ms | file=users.controller.ts | method=findAllUsers | by=anonymous
+[my-api] | 2026-04-27 16:00:00 | INFO GET /api/users 200 6ms | file=index.js | method=findAllUsers | by=anonymous
 ```
 
 Logger behavior:
 
 - Uses Cambodia local time in `YYYY-MM-DD HH:mm:ss` format
-- Infers route file and handler method from Express route metadata
+- Uses the running entry file when available, such as `index.js`
+- Falls back to route-based file inference, such as `users.controller.ts`
+- Infers handler method names from named Express route handlers
 - Redacts sensitive request and response fields
 - Hides request source by default
 - Supports global and per-middleware options
@@ -258,12 +237,11 @@ configureLogger({
 
 `requestLogger()` remains available as an alias for `logger()`.
 
-For a single-file app such as `index.js`, set the source file globally and use named route handlers for clean log output:
+For a single-file app such as `index.js`, run your app with `node index.js` or `nodemon index.js` and use named route handlers for clean log output:
 
 ```js
 configureLogger({
   projectName: "my-api",
-  sourceFile: "index.js",
 });
 
 async function findAllUsers(req, res) {
@@ -280,6 +258,15 @@ Example output:
 ***response={"success":true,"statusCode":200,"message":"OK","data":[{"id":"1","name":"Sokha","status":"ACTIVE","role":"ADMIN"},{"id":"2","name":"Dara","status":"ACTIVE","role":"USER"},{"id":"3","name":"Sophea","status":"INACTIVE","role":"USER"}],"total":3,"timestamp":"2026-04-28 08:55:59"}***
 ```
 
+If you want to force a file name, set `sourceFile`:
+
+```js
+configureLogger({
+  projectName: "my-api",
+  sourceFile: "index.js",
+});
+```
+
 ## Responses
 
 Short response:
@@ -291,9 +278,7 @@ return res.json(response(users));
 Full response with status code and message:
 
 ```js
-return res.json(
-  response(users, statusCode.OK, "Users fetched successfully"),
-);
+return res.json(response(users, statusCode.OK, "Users fetched successfully"));
 ```
 
 Paginated response:
