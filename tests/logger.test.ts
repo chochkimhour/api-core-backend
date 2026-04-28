@@ -179,6 +179,77 @@ describe("request logger middleware", () => {
     );
   });
 
+  it("uses the resource segment for full app route paths", () => {
+    const logs: string[] = [];
+    let finishListener: (() => void) | undefined;
+
+    function findAllUsers() {
+      return undefined;
+    }
+
+    const middleware = logger({
+      projectName: "my-api",
+      log: (message) => logs.push(message),
+    });
+
+    middleware(
+      {
+        method: "GET",
+        originalUrl: "/api/users",
+        route: {
+          path: "/api/users",
+          stack: [{ handle: findAllUsers }],
+        },
+      },
+      {
+        statusCode: 200,
+        on: (_event, listener) => {
+          finishListener = listener;
+        },
+      },
+      () => undefined,
+    );
+
+    finishListener?.();
+
+    expect(logs[0]).toMatch(
+      /file=users\.controller\.ts \| method=findAllUsers/,
+    );
+  });
+
+  it("falls back to the HTTP method for anonymous async handlers", () => {
+    const logs: string[] = [];
+    let finishListener: (() => void) | undefined;
+
+    const middleware = logger({
+      projectName: "my-api",
+      log: (message) => logs.push(message),
+    });
+    const anonymousHandler = asyncHandler(async () => undefined);
+
+    middleware(
+      {
+        method: "GET",
+        originalUrl: "/api/users",
+        route: {
+          path: "/api/users",
+          stack: [{ handle: anonymousHandler }],
+        },
+      },
+      {
+        statusCode: 200,
+        on: (_event, listener) => {
+          finishListener = listener;
+        },
+      },
+      () => undefined,
+    );
+
+    finishListener?.();
+
+    expect(logs[0]).toMatch(/file=users\.controller\.ts \| method=GET/);
+  });
+
   it("logs redacted request body json", () => {
     const logs: string[] = [];
     let finishListener: (() => void) | undefined;

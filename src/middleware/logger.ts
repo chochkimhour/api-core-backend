@@ -171,7 +171,8 @@ function normalizeHandlerName(name?: string): string | undefined {
     !normalized ||
     normalized === "<anonymous>" ||
     normalized === "anonymous" ||
-    normalized === "handler"
+    normalized === "handler" ||
+    normalized === "wrapped"
   ) {
     return undefined;
   }
@@ -203,7 +204,10 @@ function getFirstPathSegment(path?: string): string | undefined {
   return path
     ?.split(/[?#]/, 1)[0]
     ?.split("/")
-    .filter((segment) => segment && !segment.startsWith(":"))[0];
+    .filter(
+      (segment) =>
+        segment && !segment.startsWith(":") && segment.toLowerCase() !== "api",
+    )[0];
 }
 
 function getLastPathSegment(path?: string): string | undefined {

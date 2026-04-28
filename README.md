@@ -132,40 +132,39 @@ const users = [
   { id: "3", name: "Sophea", status: "INACTIVE", role: "USER" },
 ];
 
-app.get(
-  "/api/users",
-  asyncHandler(async (req, res) => {
-    const pagination = getPagination(req.query);
-    const filters = getFilters(req.query, ["status", "role"]);
-    const search = getSearch(req.query);
-    const sorting = getSorting(req.query);
+async function findAllUsers(req, res) {
+  const pagination = getPagination(req.query);
+  const filters = getFilters(req.query, ["status", "role"]);
+  const search = getSearch(req.query);
+  const sorting = getSorting(req.query);
 
-    const filteredUsers = users
-      .filter((user) =>
-        filters.status ? user.status === filters.status : true,
-      )
-      .filter((user) => (filters.role ? user.role === filters.role : true))
-      .filter((user) =>
-        search.keyword
-          ? user.name.toLowerCase().includes(search.keyword.toLowerCase())
-          : true,
-      )
-      .sort((a, b) => {
-        if (!sorting.sortBy) return 0;
+  const filteredUsers = users
+    .filter((user) => (filters.status ? user.status === filters.status : true))
+    .filter((user) => (filters.role ? user.role === filters.role : true))
+    .filter((user) =>
+      search.keyword
+        ? user.name.toLowerCase().includes(search.keyword.toLowerCase())
+        : true,
+    )
+    .sort((a, b) => {
+      if (!sorting.sortBy) return 0;
 
-        const left = String(a[sorting.sortBy] ?? "");
-        const right = String(b[sorting.sortBy] ?? "");
+      const left = String(a[sorting.sortBy] ?? "");
+      const right = String(b[sorting.sortBy] ?? "");
 
-        return sorting.sortOrder === "desc"
-          ? right.localeCompare(left)
-          : left.localeCompare(right);
-      });
+      return sorting.sortOrder === "desc"
+        ? right.localeCompare(left)
+        : left.localeCompare(right);
+    });
 
-    return res
-      .status(statusCode.OK)
-      .json(response(paginate(filteredUsers, pagination)));
-  }),
-);
+  const result = paginate(filteredUsers, pagination);
+
+  return res.json(
+    response(result, statusCode.OK, "Users fetched successfully"),
+  );
+}
+
+app.get("/api/users", asyncHandler(findAllUsers));
 
 app.use(notFoundMiddleware);
 app.use(errorMiddleware);
@@ -187,7 +186,7 @@ import { getPagination, paginate, response } from "api-core-backend";
 const pagination = getPagination(req.query);
 const result = paginate(users, pagination);
 
-res.json(response(result));
+return res.json(response(result));
 ```
 
 Defaults:
@@ -259,7 +258,54 @@ configureLogger({
 
 `requestLogger()` remains available as an alias for `logger()`.
 
+For a single-file app such as `index.js`, set the source file globally and use named route handlers for clean log output:
+
+```js
+configureLogger({
+  projectName: "my-api",
+  sourceFile: "index.js",
+});
+
+async function findAllUsers(req, res) {
+  return res.json(response(users));
+}
+
+app.get("/api/users", asyncHandler(findAllUsers));
+```
+
+Example output:
+
+```text
+[my-api] | 2026-04-28 08:55:59 | INFO GET /api/users 200 29ms | file=index.js | method=findAllUsers | by=anonymous
+***response={"success":true,"statusCode":200,"message":"OK","data":[{"id":"1","name":"Sokha","status":"ACTIVE","role":"ADMIN"},{"id":"2","name":"Dara","status":"ACTIVE","role":"USER"},{"id":"3","name":"Sophea","status":"INACTIVE","role":"USER"}],"total":3,"timestamp":"2026-04-28 08:55:59"}***
+```
+
 ## Responses
+
+Short response:
+
+```js
+return res.json(response(filteredUsers));
+```
+
+Full response with status code and message:
+
+```js
+return res.json(
+  response(filteredUsers, statusCode.OK, "Users fetched successfully"),
+);
+```
+
+Paginated response:
+
+```js
+const pagination = getPagination(req.query);
+const result = paginate(filteredUsers, pagination);
+
+return res.json(response(result, statusCode.OK, "Users fetched successfully"));
+```
+
+Other response helpers:
 
 ```js
 import {
@@ -269,8 +315,6 @@ import {
   successResponse,
   validationErrorResponse,
 } from "api-core-backend";
-
-res.json(response({ id: 1, name: "Sokha" }));
 
 successResponse({ message: "Done", data: { id: 1 } });
 errorResponse({ message: "Something went wrong", code: "ERROR_CODE" });
