@@ -2,8 +2,6 @@ import type { SortOrder } from "./query.types";
 import type { QueryValue } from "./query.types";
 
 export interface PaginationQuery {
-  page?: QueryValue;
-  limit?: QueryValue;
   max?: QueryValue;
   offset?: QueryValue;
   sortBy?: QueryValue;
@@ -11,10 +9,7 @@ export interface PaginationQuery {
 }
 
 export interface PaginationOptions {
-  defaultPage?: number;
-  defaultLimit?: number;
   defaultMax?: number;
-  maxLimit?: number;
   maxMax?: number;
 }
 
@@ -26,10 +21,9 @@ export interface NormalizedPagination {
 }
 
 export interface PaginationMeta {
-  page: number;
   max: number;
+  offset: number;
   total: number;
-  totalPages: number;
   hasNextPage: boolean;
   hasPreviousPage: boolean;
 }

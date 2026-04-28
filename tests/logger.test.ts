@@ -302,7 +302,9 @@ describe("request logger middleware", () => {
 
     finishListener?.();
 
-    expect(logs[0]).toMatch(/file=users\.controller\.ts \| method=findAllUsers/);
+    expect(logs[0]).toMatch(
+      /file=users\.controller\.ts \| method=findAllUsers/,
+    );
   });
 
   it("can still include request source when enabled", () => {

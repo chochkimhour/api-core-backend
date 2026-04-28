@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   createSwaggerSpec,
   errorResponseSchema,
-  limitQueryParameter,
+  maxQueryParameter,
+  offsetQueryParameter,
   paginatedResponseSchema,
   paginationMetadataSchema,
   qQueryParameter,
@@ -21,7 +22,14 @@ describe("swagger helpers", () => {
   it("exports reusable response schemas", () => {
     expect(successResponseSchema).toMatchObject({
       type: "object",
-      required: ["success", "statusCode", "message", "data", "total", "timestamp"],
+      required: [
+        "success",
+        "statusCode",
+        "message",
+        "data",
+        "total",
+        "timestamp",
+      ],
       properties: {
         success: { type: "boolean", example: true },
         statusCode: { type: "integer", example: 200 },
@@ -41,15 +49,20 @@ describe("swagger helpers", () => {
 
     expect(paginatedResponseSchema.allOf).toHaveLength(2);
     expect(paginationMetadataSchema.properties).toMatchObject({
-      page: { type: "integer", example: 1 },
       max: { type: "integer", example: 10 },
+      offset: { type: "integer", example: 0 },
       total: { type: "integer", example: 100 },
     });
   });
 
   it("exports reusable query parameters", () => {
-    expect(limitQueryParameter).toMatchObject({
-      name: "limit",
+    expect(maxQueryParameter).toMatchObject({
+      name: "max",
+      in: "query",
+      required: false,
+    });
+    expect(offsetQueryParameter).toMatchObject({
+      name: "offset",
       in: "query",
       required: false,
     });
@@ -57,8 +70,8 @@ describe("swagger helpers", () => {
     expect(sortOrderQueryParameter.schema.enum).toEqual(["asc", "desc"]);
     expect(qQueryParameter.name).toBe("q");
     expect(searchQueryParameter.name).toBe("search");
-    expect(swaggerQueryParameters).toHaveProperty("Page");
-    expect(swaggerQueryParameters).toHaveProperty("Limit");
+    expect(swaggerQueryParameters).toHaveProperty("Max");
+    expect(swaggerQueryParameters).toHaveProperty("Offset");
     expect(swaggerQueryParameters).toHaveProperty("SortBy");
     expect(swaggerQueryParameters).toHaveProperty("SortOrder");
     expect(swaggerQueryParameters).toHaveProperty("Q");

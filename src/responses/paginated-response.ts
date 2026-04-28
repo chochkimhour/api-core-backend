@@ -6,9 +6,8 @@ import { getCambodiaTimestamp } from "../utils/timestamp";
 export interface PaginatedResponseInput<T> {
   message?: string;
   data?: T[];
-  page: number;
   max?: number;
-  limit?: number;
+  offset?: number;
   total: number;
 }
 
@@ -16,9 +15,8 @@ export interface PaginatedResponseWithMetaInput<T> {
   message?: string;
   data?: T[];
   meta: {
-    page: number;
     max?: number;
-    limit?: number;
+    offset?: number;
     total: number;
   };
 }
@@ -29,9 +27,8 @@ export function paginatedResponse<T = unknown>(
 ): PaginatedResponse<T> {
   const meta = "meta" in input ? input.meta : input;
   const paginationInput = {
-    page: meta.page,
     ...(meta.max !== undefined ? { max: meta.max } : {}),
-    ...(meta.limit !== undefined ? { limit: meta.limit } : {}),
+    ...(meta.offset !== undefined ? { offset: meta.offset } : {}),
     total: meta.total,
   };
   const pagination: PaginationMeta = getPaginationMeta(paginationInput);

@@ -22,9 +22,7 @@ describe("response helpers", () => {
       total: 1,
     });
     expect(response.timestamp).toEqual(expect.any(String));
-    expect(response.timestamp).toMatch(
-      /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/,
-    );
+    expect(response.timestamp).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/);
   });
 
   it("preserves explicit null data in success responses", () => {
@@ -277,8 +275,8 @@ describe("response helpers", () => {
   it("creates a paginated response", () => {
     const response = paginatedResponse({
       data: [1, 2, 3],
-      page: 1,
       max: 10,
+      offset: 0,
       total: 25,
     });
 
@@ -297,8 +295,8 @@ describe("response helpers", () => {
       message: "Users fetched successfully",
       data: [{ id: 1 }],
       meta: {
-        page: 1,
         max: 10,
+        offset: 0,
         total: 1,
       },
     });
@@ -311,7 +309,6 @@ describe("response helpers", () => {
     });
     expect(response).not.toHaveProperty("pagination");
     expect(response).not.toHaveProperty("offset");
-    expect(response).not.toHaveProperty("maxLimit");
     expect(response).not.toHaveProperty("error");
   });
 });

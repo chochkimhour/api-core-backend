@@ -1,27 +1,5 @@
 import type { OpenApiParameter } from "./types";
 
-export const pageQueryParameter: OpenApiParameter = {
-  name: "page",
-  in: "query",
-  description: "Page number for page-based pagination. Kept for compatibility.",
-  required: false,
-  schema: {
-    type: "integer",
-    example: 1,
-  },
-};
-
-export const limitQueryParameter: OpenApiParameter = {
-  name: "limit",
-  in: "query",
-  description: "Maximum number of records to return. Alias for max.",
-  required: false,
-  schema: {
-    type: "integer",
-    example: 10,
-  },
-};
-
 export const maxQueryParameter: OpenApiParameter = {
   name: "max",
   in: "query",
@@ -90,8 +68,6 @@ export const searchQueryParameter: OpenApiParameter = {
 };
 
 export const swaggerQueryParameters = {
-  Page: pageQueryParameter,
-  Limit: limitQueryParameter,
   Max: maxQueryParameter,
   Offset: offsetQueryParameter,
   SortBy: sortByQueryParameter,
