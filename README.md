@@ -13,23 +13,70 @@ Use it when you want your API controllers to stay focused on business logic inst
 
 ## Why Use It
 
-- Standard response format across all endpoints
-- Simple `max`/`offset` pagination for list APIs
-- Reusable filter, search, and sorting helpers
-- Typed HTTP error classes and error middleware
-- Async route handler wrapper for Express controllers
-- Request logger with route, status, duration, user, and response data
-- Optional Swagger/OpenAPI helpers for API documentation
-- TypeScript types included
-- No runtime dependencies
+- Keeps API responses consistent across endpoints and projects
+- Reduces repeated controller, pagination, error, and logging code
+- Provides safe defaults for common REST API patterns
+- Works well in JavaScript and TypeScript projects
+- Keeps runtime dependencies at zero
 
 ## Use With
 
-- Node.js APIs
-- Express applications
-- Express-compatible frameworks
-- JavaScript or TypeScript backends
-- REST APIs that need consistent responses, pagination, errors, logs, and docs
+### Languages And Runtimes
+
+- JavaScript
+- TypeScript
+- Node.js
+- Bun runtime
+- Deno runtime with npm package support
+
+### Frameworks
+
+- Express
+- NestJS with Express adapter
+- Fastify
+- Koa
+- Hono
+- Restify
+- AdonisJS
+- FeathersJS
+- Serverless API routes
+- Any Node.js framework that can use plain helper functions
+
+Express middleware helpers such as `logger()`, `asyncHandler()`, `notFoundMiddleware`, and `errorMiddleware` are designed for Express-compatible `req`, `res`, and `next` handlers. Response, pagination, filter, search, sorting, status code, error class, and Swagger helpers can be used in any Node.js backend.
+
+## Features
+
+- Standard JSON success responses
+- Standard JSON error responses
+- Validation error response helper
+- Paginated response helper
+- Automatic `total` calculation for arrays and single objects
+- `max` and `offset` pagination helpers
+- Pagination metadata helper
+- Array pagination helper for in-memory data
+- Query filter helper with allowed fields
+- Search helper using `q` or `search`
+- Sorting helper using `sortBy` and `sortOrder`
+- HTTP status code constants
+- Typed HTTP error classes
+- Express async handler wrapper
+- Express not found middleware
+- Express error middleware
+- Request logger middleware
+- Global logger configuration
+- Per-route logger override support
+- Cambodia local timestamp format
+- Route file and handler name inference for logs
+- Optional request body logging
+- Optional response body logging
+- Sensitive field redaction for logs
+- Optional request source and user-agent logging
+- Optional Swagger/OpenAPI spec builder
+- Optional Swagger UI setup helper
+- Reusable Swagger schemas and query parameters
+- TypeScript types included
+- ESM and CommonJS builds
+- No runtime dependencies
 
 ## Installation
 
