@@ -1,9 +1,12 @@
 # api-core-backend
 
-[![npm package](https://img.shields.io/badge/npm-api--core--backend-cb3837)](https://www.npmjs.com/package/api-core-backend)
-![license](https://img.shields.io/badge/license-MIT-blue)
-![node](https://img.shields.io/badge/node-%3E%3D18-brightgreen)
-![typescript](https://img.shields.io/badge/types-included-blue)
+![npm version](https://img.shields.io/npm/v/api-core-backend?style=flat-square)
+![license](https://img.shields.io/npm/l/api-core-backend?style=flat-square)
+![npm downloads](https://img.shields.io/npm/dm/api-core-backend?style=flat-square)
+![dependencies](https://img.shields.io/badge/dependencies-none-brightgreen?style=flat-square)
+![types](https://img.shields.io/badge/types-TypeScript-blue?style=flat-square)
+![node](https://img.shields.io/badge/node-%3E%3D18-brightgreen?style=flat-square)
+[![source](https://img.shields.io/badge/source-GitLab-orange?style=flat-square)](https://gitlab.com/chochkimhour/api-core-backend)
 
 REST API helpers for Node.js, Express, and TypeScript.
 
@@ -471,4 +474,4 @@ Import from `api-core-backend/swagger`.
 
 MIT License.
 
-Copyright (c) 2026 Choch Kimhour.
+Copyright (c) 2026-present Choch Kimhour.
