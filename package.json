@@ -6,11 +6,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://gitlab.com/chochkimhour/api-core-backend.git"
+    "url": "git+https://github.com/chochkimhour/api-core-backend.git"
   },
   "homepage": "https://www.npmjs.com/package/api-core-backend",
   "bugs": {
-    "url": "https://gitlab.com/chochkimhour/api-core-backend/-/issues"
+    "url": "https://github.com/chochkimhour/api-core-backend/issues"
   },
   "type": "module",
   "sideEffects": false,
