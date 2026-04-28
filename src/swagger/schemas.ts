@@ -64,19 +64,11 @@ export const validationErrorResponseSchema: OpenApiSchema = {
 
 export const paginationMetadataSchema: OpenApiSchema = {
   type: "object",
-  required: [
-    "page",
-    "max",
-    "total",
-    "totalPages",
-    "hasNextPage",
-    "hasPreviousPage",
-  ],
+  required: ["max", "offset", "total", "hasNextPage", "hasPreviousPage"],
   properties: {
-    page: { type: "integer", example: 1 },
     max: { type: "integer", example: 10 },
+    offset: { type: "integer", example: 0 },
     total: { type: "integer", example: 100 },
-    totalPages: { type: "integer", example: 10 },
     hasNextPage: { type: "boolean", example: true },
     hasPreviousPage: { type: "boolean", example: false },
   },

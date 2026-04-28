@@ -42,7 +42,6 @@ describe("pagination utilities", () => {
   it("falls back for invalid values", () => {
     expect(
       normalizePaginationQuery({
-        page: "bad",
         max: "-1",
         offset: "-1",
         sortOrder: "sideways",
@@ -60,13 +59,6 @@ describe("pagination utilities", () => {
     });
   });
 
-  it("supports limit as a compatibility alias for max", () => {
-    expect(getPagination({ limit: "5", offset: "2" })).toEqual({
-      max: 5,
-      offset: 2,
-    });
-  });
-
   it("paginates arrays and keeps the full total", () => {
     const users = [{ id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }, { id: 5 }];
 
@@ -77,11 +69,10 @@ describe("pagination utilities", () => {
   });
 
   it("builds pagination metadata", () => {
-    expect(getPaginationMeta({ page: 2, max: 10, total: 21 })).toEqual({
-      page: 2,
+    expect(getPaginationMeta({ max: 10, offset: 10, total: 21 })).toEqual({
       max: 10,
+      offset: 10,
       total: 21,
-      totalPages: 3,
       hasNextPage: true,
       hasPreviousPage: true,
     });
@@ -89,12 +80,11 @@ describe("pagination utilities", () => {
 
   it("falls back to zero for invalid pagination totals", () => {
     expect(
-      getPaginationMeta({ page: 1, max: 10, total: undefined as never }),
+      getPaginationMeta({ max: 10, offset: 0, total: undefined as never }),
     ).toEqual({
-      page: 1,
       max: 10,
+      offset: 0,
       total: 0,
-      totalPages: 0,
       hasNextPage: false,
       hasPreviousPage: false,
     });

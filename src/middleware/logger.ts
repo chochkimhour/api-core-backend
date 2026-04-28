@@ -1,6 +1,6 @@
 import { getCambodiaTimestamp } from "../utils/timestamp";
 
-export interface RequestLoggerRequest {
+export interface LoggerRequest {
   method?: string;
   originalUrl?: string;
   url?: string;
@@ -20,15 +20,15 @@ export interface RequestLoggerRequest {
   user?: unknown;
 }
 
-export interface RequestLoggerResponse {
+export interface LoggerResponse {
   statusCode?: number;
   on?: (event: "finish", listener: () => void) => unknown;
   json?: (body: unknown) => unknown;
 }
 
-export type RequestLoggerNext = () => void;
+export type LoggerNext = () => void;
 
-export interface RequestLoggerOptions {
+export interface LoggerOptions {
   enabled?: boolean;
   projectName?: string;
   includeRequestFrom?: boolean;
@@ -43,16 +43,22 @@ export interface RequestLoggerOptions {
   controllerFileSuffix?: string;
   sourceFile?: string;
   sourceMethod?: string;
-  getSourceFile?: (req: RequestLoggerRequest) => string | undefined;
-  getSourceMethod?: (req: RequestLoggerRequest) => string | undefined;
-  getUser?: (req: RequestLoggerRequest) => string | undefined;
+  getSourceFile?: (req: LoggerRequest) => string | undefined;
+  getSourceMethod?: (req: LoggerRequest) => string | undefined;
+  getUser?: (req: LoggerRequest) => string | undefined;
   log?: (message: string) => void;
   logger?: (message: string) => void;
 }
 
-export type RequestLoggerConfig = RequestLoggerOptions;
+export type LoggerConfig = LoggerOptions;
+export type RequestLoggerRequest = LoggerRequest;
+export type RequestLoggerResponse = LoggerResponse;
+export type RequestLoggerNext = LoggerNext;
+export type RequestLoggerOptions = LoggerOptions;
+export type RequestLoggerConfig = LoggerConfig;
 
 type ProcessLike = {
+  argv?: string[];
   env?: Record<string, string | undefined>;
 };
 
@@ -67,9 +73,9 @@ const DEFAULT_REDACT_FIELDS = [
   "apiKey",
 ] as const;
 
-let globalLoggerConfig: RequestLoggerConfig = {};
+let globalLoggerConfig: LoggerConfig = {};
 
-export function configureLogger(config: RequestLoggerConfig): void {
+export function configureLogger(config: LoggerConfig): void {
   globalLoggerConfig = {
     ...globalLoggerConfig,
     ...config,
@@ -96,10 +102,7 @@ function getLevel(statusCode?: number): "INFO" | "WARN" | "ERROR" {
   return "INFO";
 }
 
-function getHeader(
-  req: RequestLoggerRequest,
-  name: string,
-): string | undefined {
+function getHeader(req: LoggerRequest, name: string): string | undefined {
   const fromGetter = req.get?.(name);
 
   if (fromGetter) {
@@ -113,9 +116,8 @@ function getHeader(
 
 function getDefaultProjectName(): string {
   const processLike = (globalThis as { process?: ProcessLike }).process;
-  const packageJsonPathParts = processLike?.env?.npm_package_json?.split(
-    /[\\/]/,
-  );
+  const packageJsonPathParts =
+    processLike?.env?.npm_package_json?.split(/[\\/]/);
 
   return (
     processLike?.env?.APP_NAME ??
@@ -125,6 +127,28 @@ function getDefaultProjectName(): string {
       : undefined) ??
     "app"
   );
+}
+
+function getFileNameFromPath(path?: string): string | undefined {
+  const fileName = path?.split(/[\\/]/).filter(Boolean).pop();
+
+  return fileName && fileName.includes(".") ? fileName : undefined;
+}
+
+function getRuntimeSourceFile(): string | undefined {
+  const processLike = (globalThis as { process?: ProcessLike }).process;
+  const entryFile = processLike?.argv?.[1];
+
+  if (
+    !entryFile ||
+    /[\\/]node_modules[\\/]/.test(entryFile) ||
+    /[\\/]\.bin[\\/]/.test(entryFile) ||
+    /(?:vitest|tsx|ts-node|nodemon)(?:\.[cm]?js)?$/i.test(entryFile)
+  ) {
+    return undefined;
+  }
+
+  return getFileNameFromPath(entryFile);
 }
 
 function formatUser(user: unknown): string | undefined {
@@ -170,7 +194,8 @@ function normalizeHandlerName(name?: string): string | undefined {
     !normalized ||
     normalized === "<anonymous>" ||
     normalized === "anonymous" ||
-    normalized === "handler"
+    normalized === "handler" ||
+    normalized === "wrapped"
   ) {
     return undefined;
   }
@@ -178,7 +203,7 @@ function normalizeHandlerName(name?: string): string | undefined {
   return normalized;
 }
 
-function getRouteHandlerName(req: RequestLoggerRequest): string | undefined {
+function getRouteHandlerName(req: LoggerRequest): string | undefined {
   const stack = req.route?.stack;
 
   if (!stack?.length) {
@@ -202,7 +227,10 @@ function getFirstPathSegment(path?: string): string | undefined {
   return path
     ?.split(/[?#]/, 1)[0]
     ?.split("/")
-    .filter((segment) => segment && !segment.startsWith(":"))[0];
+    .filter(
+      (segment) =>
+        segment && !segment.startsWith(":") && segment.toLowerCase() !== "api",
+    )[0];
 }
 
 function getLastPathSegment(path?: string): string | undefined {
@@ -214,7 +242,7 @@ function getLastPathSegment(path?: string): string | undefined {
   return segments?.[segments.length - 1];
 }
 
-function getRoutePath(req: RequestLoggerRequest): string | undefined {
+function getRoutePath(req: LoggerRequest): string | undefined {
   if (typeof req.route?.path === "string") {
     return req.route.path;
   }
@@ -223,7 +251,7 @@ function getRoutePath(req: RequestLoggerRequest): string | undefined {
 }
 
 function getRouteControllerFile(
-  req: RequestLoggerRequest,
+  req: LoggerRequest,
   suffix: string,
 ): string | undefined {
   const routeSegment = getFirstPathSegment(getRoutePath(req));
@@ -277,8 +305,8 @@ function canLogRequestBody(method?: string): boolean {
 }
 
 function formatRequestData(
-  req: RequestLoggerRequest,
-  options: RequestLoggerOptions,
+  req: LoggerRequest,
+  options: LoggerOptions,
 ): string | undefined {
   if (
     !canLogRequestBody(req.method) ||
@@ -289,10 +317,7 @@ function formatRequestData(
   }
 
   const serialized = JSON.stringify(
-    sanitizeLogValue(
-      req.body,
-      options.redactFields ?? DEFAULT_REDACT_FIELDS,
-    ),
+    sanitizeLogValue(req.body, options.redactFields ?? DEFAULT_REDACT_FIELDS),
   );
   const maxLength = options.maxRequestDataLength ?? 500;
 
@@ -303,7 +328,7 @@ function formatRequestData(
 
 function formatResponseData(
   responseBody: unknown,
-  options: RequestLoggerOptions,
+  options: LoggerOptions,
 ): string | undefined {
   if (responseBody === undefined) {
     return undefined;
@@ -379,19 +404,14 @@ export function formatRequestLog(input: {
   return lines.join("\n");
 }
 
-export function logger(options: RequestLoggerOptions = {}) {
+export function logger(options: LoggerOptions = {}) {
   const resolvedOptions = {
     ...globalLoggerConfig,
     ...options,
   };
-  const log =
-    resolvedOptions.log ?? resolvedOptions.logger ?? console.log;
+  const log = resolvedOptions.log ?? resolvedOptions.logger ?? console.log;
 
-  return (
-    req: RequestLoggerRequest,
-    res: RequestLoggerResponse,
-    next: RequestLoggerNext,
-  ): void => {
+  return (req: LoggerRequest, res: LoggerResponse, next: LoggerNext): void => {
     if (resolvedOptions.enabled === false) {
       next();
       return;
@@ -400,15 +420,13 @@ export function logger(options: RequestLoggerOptions = {}) {
     const startedAt = Date.now();
     let responseBody: unknown;
     const shouldIncludeRequestFrom =
-      resolvedOptions.includeRequestFrom ??
-      resolvedOptions.includeIp ??
-      false;
+      resolvedOptions.includeRequestFrom ?? resolvedOptions.includeIp ?? false;
 
     if (res.json) {
       const originalJson = res.json;
 
       res.json = function jsonWithLogging(
-        this: RequestLoggerResponse,
+        this: LoggerResponse,
         body: unknown,
       ): unknown {
         responseBody = body;
@@ -435,6 +453,7 @@ export function logger(options: RequestLoggerOptions = {}) {
       const sourceFile =
         resolvedOptions.getSourceFile?.(req) ??
         resolvedOptions.sourceFile ??
+        getRuntimeSourceFile() ??
         routeSourceFile;
       const sourceMethod =
         resolvedOptions.getSourceMethod?.(req) ??

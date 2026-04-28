@@ -7,7 +7,6 @@ import type {
 } from "../types/pagination.types";
 import type { SortOrder } from "../types/query.types";
 
-const DEFAULT_PAGE = 1;
 const DEFAULT_MAX = 10;
 const MAX_MAX = 100;
 
@@ -50,14 +49,12 @@ export function normalizePaginationQuery(
   query: PaginationQuery = {},
   options: PaginationOptions = {},
 ): NormalizedPagination {
-  const defaultPage = options.defaultPage ?? DEFAULT_PAGE;
-  const defaultMax = options.defaultMax ?? options.defaultLimit ?? DEFAULT_MAX;
-  const maxMax = options.maxMax ?? options.maxLimit ?? MAX_MAX;
+  const defaultMax = options.defaultMax ?? DEFAULT_MAX;
+  const maxMax = options.maxMax ?? MAX_MAX;
 
-  const page = toPositiveInteger(query.page, defaultPage);
-  const requestedMax = toPositiveInteger(query.max ?? query.limit, defaultMax);
+  const requestedMax = toPositiveInteger(query.max, defaultMax);
   const max = Math.min(requestedMax, maxMax);
-  const offset = toNonNegativeInteger(query.offset, (page - 1) * max);
+  const offset = toNonNegativeInteger(query.offset);
   const sortBy = toSafeString(query.sortBy);
   const sortOrder = normalizeSortOrder(query.sortOrder);
 
@@ -90,22 +87,19 @@ export function paginate<T>(
 
 /** Builds pagination metadata for API responses. */
 export function getPaginationMeta(input: {
-  page: number;
-  limit?: number;
   max?: number;
+  offset?: number;
   total: number;
 }): PaginationMeta {
-  const page = toPositiveInteger(input.page, DEFAULT_PAGE);
-  const max = toPositiveInteger(input.max ?? input.limit, DEFAULT_MAX);
+  const max = toPositiveInteger(input.max, DEFAULT_MAX);
+  const offset = toNonNegativeInteger(input.offset);
   const total = toNonNegativeInteger(input.total);
-  const totalPages = total === 0 ? 0 : Math.ceil(total / max);
 
   return {
-    page,
     max,
+    offset,
     total,
-    totalPages,
-    hasNextPage: totalPages > 0 && page < totalPages,
-    hasPreviousPage: page > 1 && totalPages > 0,
+    hasNextPage: offset + max < total,
+    hasPreviousPage: offset > 0 && total > 0,
   };
 }
