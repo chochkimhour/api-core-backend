@@ -285,14 +285,14 @@ Example output:
 Short response:
 
 ```js
-return res.json(response(filteredUsers));
+return res.json(response(users));
 ```
 
 Full response with status code and message:
 
 ```js
 return res.json(
-  response(filteredUsers, statusCode.OK, "Users fetched successfully"),
+  response(users, statusCode.OK, "Users fetched successfully"),
 );
 ```
 
